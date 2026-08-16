@@ -1,0 +1,326 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-16T15:39:00+05:30",
+  "title": "Design System: AFM Portfolio — Public Folio",
+  "extensions": {
+    "colorMeta": {
+      "gallery-graphite": {
+        "role": "neutral",
+        "displayName": "Gallery Graphite",
+        "canonical": "#1a1d22",
+        "tonalRamp": ["#0c0e11", "#1a1d22", "#2a2e34", "#4a4f58", "#6e7480", "#9aa0aa", "#c8c4bc", "#f2ece3"]
+      },
+      "gallery-panel": {
+        "role": "neutral",
+        "displayName": "Gallery Panel",
+        "canonical": "#2a2e34",
+        "tonalRamp": ["#121418", "#1a1d22", "#2a2e34", "#3d434c", "#5c636e", "#8a9098", "#c4b8a8", "#f2ece3"]
+      },
+      "plaster-ink": {
+        "role": "neutral",
+        "displayName": "Plaster Ink",
+        "canonical": "#f2ece3",
+        "tonalRamp": ["#2a2e34", "#5c5346", "#8a7f70", "#c4b8a8", "#d2c4b4", "#e0d4c4", "#f2ece3", "#fbf8f4"]
+      },
+      "traveling-mark": {
+        "role": "primary",
+        "displayName": "Traveling Mark",
+        "canonical": "#c45a1a",
+        "tonalRamp": ["#3a1808", "#6e2e0e", "#c45a1a", "#d8b25a", "#e2b15c", "#e7c48a", "#f2ece3", "#fbf6ee"]
+      },
+      "wall-mute": {
+        "role": "neutral",
+        "displayName": "Wall Mute",
+        "canonical": "#d2c4b4",
+        "tonalRamp": ["#2a2e34", "#5c5346", "#8a7f70", "#c4b8a8", "#d2c4b4", "#e0d4c4", "#f2ece3", "#fbf8f4"]
+      },
+      "gallery-night": {
+        "role": "secondary",
+        "displayName": "Gallery Night",
+        "canonical": "#2f5a46",
+        "tonalRamp": ["#0e1c16", "#163024", "#1e4a32", "#2f5a46", "#4d5c52", "#7eb56a", "#d7e4c8", "#f4f1e8"]
+      },
+      "ground-paper": {
+        "role": "neutral",
+        "displayName": "Ground Paper",
+        "canonical": "#163024",
+        "tonalRamp": ["#0e1c16", "#163024", "#1e4a32", "#2f5a46", "#4d5c52", "#7eb56a", "#d7e4c8", "#f4f1e8"]
+      },
+      "ground-panel": {
+        "role": "neutral",
+        "displayName": "Ground Panel",
+        "canonical": "#1e4a32",
+        "tonalRamp": ["#0e1c16", "#163024", "#1e4a32", "#2f5a46", "#4d7a58", "#7eb56a", "#d7e4c8", "#f4f1e8"]
+      },
+      "ground-mark": {
+        "role": "primary",
+        "displayName": "Ground Mark",
+        "canonical": "#d8b25a",
+        "tonalRamp": ["#3a2e10", "#6e5420", "#c4a02a", "#d8b25a", "#e2b15c", "#e7d7a8", "#f3ead8", "#fbf8f0"]
+      },
+      "ground-mute": {
+        "role": "neutral",
+        "displayName": "Ground Mute",
+        "canonical": "#d7e4c8",
+        "tonalRamp": ["#163024", "#1e4a32", "#2f5a46", "#4d5c52", "#7eb56a", "#d7e4c8", "#e8f0dc", "#f4f1e8"]
+      },
+      "ground-night": {
+        "role": "secondary",
+        "displayName": "Ground Night",
+        "canonical": "#7eb56a",
+        "tonalRamp": ["#163024", "#1e4a32", "#2f5a46", "#4d7a58", "#7eb56a", "#d7e4c8", "#e8f0dc", "#f4f1e8"]
+      },
+      "aperture-paper": {
+        "role": "neutral",
+        "displayName": "Aperture Paper",
+        "canonical": "#f7f4ee",
+        "tonalRamp": ["#163024", "#4d5c52", "#8a9098", "#c4b8a8", "#e0d4c4", "#f3ead8", "#f7f4ee", "#ffffff"]
+      },
+      "aperture-panel": {
+        "role": "neutral",
+        "displayName": "Aperture Panel",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#163024", "#4d5c52", "#8a9098", "#c4b8a8", "#e0d4c4", "#f3ead8", "#f7f4ee", "#ffffff"]
+      },
+      "aperture-mute": {
+        "role": "neutral",
+        "displayName": "Aperture Mute",
+        "canonical": "#4d5c52",
+        "tonalRamp": ["#163024", "#1e4a32", "#2f5a46", "#4d5c52", "#7eb56a", "#d7e4c8", "#f4f1e8", "#f7f4ee"]
+      },
+      "window-type": {
+        "role": "neutral",
+        "displayName": "Window Type",
+        "canonical": "#f4f1e8",
+        "tonalRamp": ["#163024", "#4d5c52", "#8a7f70", "#c4b8a8", "#d2c4b4", "#e0d4c4", "#f4f1e8", "#fbf8f4"]
+      },
+      "folio-ink": {
+        "role": "neutral",
+        "displayName": "Folio Ink",
+        "canonical": "#1c1914",
+        "tonalRamp": ["#1c1914", "#3d3830", "#5c5346", "#8a7f70", "#c4a02a", "#e7d7a8", "#f3ead8", "#fbf8f0"]
+      },
+      "folio-paper": {
+        "role": "neutral",
+        "displayName": "Folio Paper",
+        "canonical": "#f3ead8",
+        "tonalRamp": ["#1c1914", "#5c5346", "#8a7f70", "#c4a02a", "#e7d7a8", "#f3ead8", "#f7f4ee", "#fbf8f0"]
+      },
+      "folio-panel": {
+        "role": "neutral",
+        "displayName": "Folio Panel",
+        "canonical": "#e7d7a8",
+        "tonalRamp": ["#1c1914", "#5c5346", "#8a7f70", "#c4a02a", "#d8b25a", "#e7d7a8", "#f3ead8", "#fbf8f0"]
+      },
+      "folio-mark": {
+        "role": "primary",
+        "displayName": "Folio Mark",
+        "canonical": "#c4a02a",
+        "tonalRamp": ["#3a2e10", "#6e5420", "#c4a02a", "#d8b25a", "#e2b15c", "#e7d7a8", "#f3ead8", "#fbf8f0"]
+      },
+      "folio-mute": {
+        "role": "neutral",
+        "displayName": "Folio Mute",
+        "canonical": "#5c5346",
+        "tonalRamp": ["#1c1914", "#3d3830", "#5c5346", "#8a7f70", "#c4b8a8", "#e7d7a8", "#f3ead8", "#fbf8f0"]
+      },
+      "flood-paper": {
+        "role": "neutral",
+        "displayName": "Flood Paper",
+        "canonical": "#14110e",
+        "tonalRamp": ["#14110e", "#1a1d22", "#2a2e34", "#5c5346", "#c45a1a", "#e2b15c", "#e0d4c4", "#f2ece3"]
+      },
+      "flood-gold": {
+        "role": "primary",
+        "displayName": "Flood Gold",
+        "canonical": "#e2b15c",
+        "tonalRamp": ["#3a2e10", "#6e5420", "#c4a02a", "#d8b25a", "#e2b15c", "#e7d7a8", "#f3ead8", "#fbf8f0"]
+      },
+      "flood-mute": {
+        "role": "neutral",
+        "displayName": "Flood Mute",
+        "canonical": "#e0d4c4",
+        "tonalRamp": ["#14110e", "#2a2e34", "#5c5346", "#8a7f70", "#c4b8a8", "#d2c4b4", "#e0d4c4", "#f2ece3"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display (Walk)",
+        "purpose": "Project title in the first still on Walk; Gloock, max 14ch."
+      },
+      "headline": {
+        "displayName": "Hang title",
+        "purpose": "Titles under subsequent hung stills."
+      },
+      "title": {
+        "displayName": "Folio name",
+        "purpose": "Student name as architecture on the Folio still only; hidden on other tastes."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Bricolage Grotesque for lede, bio, hang notes, pills, and nav on every taste."
+      },
+      "label": {
+        "displayName": "Wall label",
+        "purpose": "Corner student name: 0.72rem, 600, 0.08em, uppercase."
+      },
+      "display-ground": {
+        "displayName": "Display (Ground)",
+        "purpose": "Fredoka recast of project and hang titles."
+      },
+      "display-aperture": {
+        "displayName": "Display (Aperture)",
+        "purpose": "Libre Baskerville in the rounded window."
+      },
+      "display-folio": {
+        "displayName": "Display (Folio)",
+        "purpose": "Bodoni Moda for the overlaid name."
+      },
+      "display-flood": {
+        "displayName": "Display (Flood)",
+        "purpose": "Archivo on color-field rooms."
+      }
+    },
+    "shadows": [
+      {
+        "name": "hung-still",
+        "value": "8px 18px 32px rgba(8, 10, 12, 0.38)",
+        "purpose": "Gallery hang under Walk (and Ground/Aperture) stills."
+      },
+      {
+        "name": "floor-band-glow",
+        "value": "0 -8px 22px rgba(196, 90, 26, 0.45)",
+        "purpose": "Copper glow under the traveling floor-band."
+      }
+    ],
+    "motion": [
+      {
+        "name": "band-enter",
+        "value": "0.9s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Floor-band scales from 0.12 with 2px blur to full width; disabled when prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "folio-narrow",
+        "value": "720px",
+        "purpose": "Suite collapses to one column; hero 92svh; Walk stagger cancelled; Ground hang 84vw."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Solid pill",
+      "kind": "button",
+      "refersTo": "pill-solid",
+      "description": "In-picture action on dark tastes: plaster on graphite capsule.",
+      "html": "<a class=\"ds-pill-solid\" href=\"#rooms\">The pieces</a>",
+      "css": ".ds-pill-solid { display: inline-flex; align-items: center; min-height: 2.4rem; padding: 0.45rem 1.05rem; border-radius: 999px; text-decoration: none; font-family: Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif; font-size: 0.88rem; background: #f2ece3; color: #1a1d22; } .ds-pill-solid:hover { text-decoration: underline; text-underline-offset: 3px; } .ds-pill-solid:focus-visible { outline: 2px solid #c45a1a; outline-offset: 3px; }"
+    },
+    {
+      "name": "Glass pill",
+      "kind": "button",
+      "refersTo": "pill-glass",
+      "description": "Secondary in-picture action: ink stroke on 18% paper.",
+      "html": "<a class=\"ds-pill-glass\" href=\"#cta\">Write</a>",
+      "css": ".ds-pill-glass { display: inline-flex; align-items: center; min-height: 2.4rem; padding: 0.45rem 1.05rem; border-radius: 999px; text-decoration: none; font-family: Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif; font-size: 0.88rem; color: #f2ece3; border: 1px solid color-mix(in srgb, #f2ece3 55%, transparent); background: color-mix(in srgb, #1a1d22 18%, transparent); } .ds-pill-glass:hover { text-decoration: underline; text-underline-offset: 3px; } .ds-pill-glass:focus-visible { outline: 2px solid #c45a1a; outline-offset: 3px; }"
+    },
+    {
+      "name": "Skip to pieces",
+      "kind": "nav",
+      "refersTo": "skip-link",
+      "description": "Skip control: traveling mark fill, plaster type.",
+      "html": "<a class=\"ds-skip\" href=\"#rooms\">The pieces</a>",
+      "css": ".ds-skip { display: inline-block; padding: 0.4rem 0.7rem; background: #c45a1a; color: #f2ece3; font-family: Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif; font-size: 0.95rem; text-decoration: none; } .ds-skip:hover { text-decoration: underline; text-underline-offset: 3px; } .ds-skip:focus-visible { outline: 2px solid #c45a1a; outline-offset: 3px; }"
+    },
+    {
+      "name": "Wall label",
+      "kind": "nav",
+      "refersTo": "label",
+      "description": "Corner name plus Works / Write over the first still.",
+      "html": "<header class=\"ds-label\"><strong>Student Name</strong><nav><a href=\"#rooms\">Works</a><a href=\"#cta\">Write</a></nav></header>",
+      "css": ".ds-label { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.25rem; color: #f2ece3; font-family: Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif; } .ds-label strong { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; } .ds-label nav { display: flex; gap: 1.1rem; font-size: 0.78rem; } .ds-label a { color: inherit; text-decoration: none; } .ds-label a:hover { text-decoration: underline; text-underline-offset: 3px; } .ds-label a:focus-visible { outline: 2px solid #c45a1a; outline-offset: 3px; }"
+    },
+    {
+      "name": "Floor band",
+      "kind": "custom",
+      "refersTo": "traveling-mark",
+      "description": "Traveling copper-gold band at the foot of the first wall.",
+      "html": "<div class=\"ds-band\" aria-hidden=\"true\"></div>",
+      "css": ".ds-band { height: 0.7rem; background: #c45a1a; box-shadow: 0 -8px 22px rgba(196, 90, 26, 0.45); transform-origin: left center; }"
+    },
+    {
+      "name": "Hung still",
+      "kind": "card",
+      "refersTo": "hang-caption",
+      "description": "A room in the suite: 16/10 still with gallery shadow and wall-distance caption.",
+      "html": "<article class=\"ds-hang\"><img alt=\"\" src=\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='100'/%3E\" /><div class=\"ds-hang-cap\"><h2>Night path</h2><p>A path still from a campus night exterior.</p></div></article>",
+      "css": ".ds-hang { margin: 0; color: #f2ece3; background: #1a1d22; font-family: Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif; } .ds-hang img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: #2a2e34; box-shadow: 8px 18px 32px rgba(8, 10, 12, 0.38); } .ds-hang-cap { padding: 0.75rem 0.1rem 0; } .ds-hang-cap h2 { margin: 0; font-family: Gloock, Palatino Linotype, Palatino, serif; font-size: 1.35rem; font-weight: 400; letter-spacing: -0.03em; line-height: 1.15; } .ds-hang-cap p { margin: 0.4rem 0 0; max-width: 48ch; color: #d2c4b4; font-size: 0.9rem; line-height: 1.5; }"
+    },
+    {
+      "name": "First-wall title",
+      "kind": "custom",
+      "refersTo": "display",
+      "description": "Project title in the picture: Gloock, tight measure.",
+      "html": "<div class=\"ds-in\"><h1>Night path</h1><p class=\"ds-lede\">A path still from a campus night exterior.</p></div>",
+      "css": ".ds-in { color: #f2ece3; font-family: Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif; max-width: 36rem; } .ds-in h1 { margin: 0; font-family: Gloock, Palatino Linotype, Palatino, serif; font-size: clamp(2.1rem, 5.4vw, 4.4rem); font-weight: 400; line-height: 1.02; letter-spacing: -0.03em; max-width: 14ch; } .ds-lede { margin: 0.85rem 0 0; max-width: 52ch; font-size: 0.95rem; line-height: 1.55; color: #d2c4b4; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Graphite Gallery Walk",
+    "overview": "The public folio is a suite of rooms a visitor walks. The student’s still is the first wall: full-bleed, uncropped as cover, with the project title sitting in the picture and the student’s name as a corner wall-label. Below the fold, more pieces hang as rooms — large stills with captions — never as a numbered contact sheet, slideshow, or swapping frame. A traveling copper-gold band marks the floor of the first wall on Walk, Ground, and Flood.\n\nFive tastes recast the same walk without changing its grammar: Walk (default, graphite gallery, Gloock), Ground (inhabited land, Fredoka, rounded chapters in a snap-row), Aperture (rounded window into the still, Libre Baskerville, type in the glass), Folio (magazine spread, Bodoni Moda, the name as architecture on the still), Flood (each piece owns a color field, Archivo). Legacy template ids map onto these five: sides → walk, light-table → aperture, pin-up → ground, dailies → flood, zine → folio (plus older developer/creative/professional aliases).\n\nGarden olive, white cards, Inter, and Instrument Serif are app chrome (auth, onboarding, dashboard). They are not the folio world. Do not import them onto /p/[slug].",
+    "keyCharacteristics": [
+      "One composition: first wall, then walk — five tastes, not five products",
+      "Hung stills at walking distance; captions under the picture, not chrome around a reel",
+      "Wall-label type for the name in the corner; display type for the work’s title in the still",
+      "Traveling mark as a floor-band, never a numbered shot rail",
+      "Square rooms on Walk and Flood; round windows and hangs only where Ground and Aperture recast the walk"
+    ],
+    "rules": [
+      {
+        "name": "The Garden Stays Off the Folio Rule",
+        "body": "Olive #3d4a28, white cards, and charcoal app type do not appear on public taste templates. Pine on the folio is Gallery Night or Ground Paper, never garden olive.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Mark Rule",
+        "body": "The traveling mark is a floor-band and a rare control accent (skip, focus, caret). It is not a page wash except on Flood, where the room is the color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Wall-Label Rule",
+        "body": "The student’s name in the first viewport is a corner label (or, on Folio, architecture in the still). It is not a centered eyebrow, not a numbered shot id, and not the project title.",
+        "section": "typography"
+      },
+      {
+        "name": "The Work Owns Display Rule",
+        "body": "Display type is for the project and hang titles. Body never impersonates a poster face.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hang, Don’t Lift Rule",
+        "body": "Offset shadow belongs to a picture on a wall. Do not put the same shadow on pills, labels, or the end note.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Band Travels Rule",
+        "body": "On Walk, Ground, and Flood the mark enters as a left-origin scale (0.9s, cubic-bezier(0.16, 1, 0.3, 1)), from scaleX(0.12) with blur(2px) to full width. prefers-reduced-motion: reduce kills the animation. Aperture and Folio do not show a band.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do start every public folio on a full-bleed (or taste-window) student still, then hang more pieces below.",
+      "Do keep Walk as the default taste and coerce legacy ids (sides, light-table, pin-up, dailies, zine) rather than reviving those layouts.",
+      "Do set the five --taste-* roles (ink, paper, panel, mark, mute, night, display, radius) and recast; do not invent a sixth chrome system on the folio.",
+      "Do use Bricolage Grotesque for body and wall-labels on every taste; recast only --taste-display.",
+      "Do put the traveling mark on the floor (Walk / Ground / Flood) or hide it (Aperture / Folio) — never as a numbered rail."
+    ],
+    "donts": [
+      "Don't build a contact-sheet, slideshow, thumb strip, or a single slot that swaps stills.",
+      "Don't number pieces in the UI (“01”, “Piece 2”, shot rails).",
+      "Don't bring garden olive, Inter, Instrument Serif, or white dashboard cards onto the public folio.",
+      "Don't treat Aperture/Folio’s hidden band as permission to drop the first wall; the still remains the room.",
+      "Don't use display type for the corner name except Folio’s overlaid architecture."
+    ]
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "title": "Choose the folio visual world",
+  "question": "The roll assigned The Walk: student work as rooms you pass through. Keep it, take the inhabited-still pick, take a paper-volume alternate, or re-roll. Slideshow / numbered-reel contact sheets stay the standing exit only.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "The Walk",
+      "kicker": "THE ROLL",
+      "lineage": "thesis exhibition: colored rooms, wall labels, walking distance",
+      "thesis": "The folio is a suite of rooms. Each piece owns a wall; scrolling is walking. Nothing swaps in one frame.",
+      "palette": ["#1a1d22", "#f2ece3", "#c45a1a", "#2f5a46", "#6b7c9a"],
+      "materials": ["hung canvas", "wall text", "room-scale color fields", "brass label"],
+      "viewport": "Full-bleed student still as the first wall; name as a small corner label; short bio in the picture; below, the next rooms as large hanging pieces, not a strip of thumbs.",
+      "risk": "Can read as a museum site if wall labels outrank the student’s work.",
+      "raised": [
+        {
+          "from": "challenger-googie",
+          "raise": "One cantilever sightline carries the eye from the name, through the hanging, into the next room — not stacked boxes."
+        },
+        {
+          "from": "challenger-racing",
+          "raise": "Each room floods with a color committed from the still; the page is the color, not a gray gallery with accents."
+        },
+        {
+          "from": "challenger-daylight",
+          "raise": "A traveling warmth band along the floor marks where you stand in the suite, never a numbered shot rail."
+        },
+        {
+          "from": "challenger-shader",
+          "raise": "Thin type sits in the student’s still; the still is the portal. No chrome stage around a swapped frame."
+        },
+        {
+          "from": "challenger-nixie",
+          "raise": "Pieces hang at different heights and depths. One slot that swaps stills is forbidden."
+        }
+      ],
+      "comp": ".impeccable/mocks/decision/assigned.webp",
+      "riskLine": "Museum chrome can swallow the student."
+    },
+    {
+      "id": "model-pick",
+      "label": "Ground",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "inhabited still: type in the picture, then a flowing page of large pieces",
+      "thesis": "The student’s own image is the world you stand in. Work is chapters of a landscape, never slides of a reel.",
+      "palette": ["#1e4a32", "#7eb56a", "#f4f1e8", "#d8b25a", "#163024"],
+      "materials": ["full-bleed still", "pill work-links", "rounded chapter cards", "glass overlay type"],
+      "viewport": "Student still owns the viewport; name and a short line sit in the scene; a horizontal row of large rounded pieces begins below the fold.",
+      "risk": "This is the familiar destination given the attached refs; most runs here land on a meadow-with-type hero.",
+      "comp": ".impeccable/mocks/decision/model-pick.webp"
+    },
+    {
+      "id": "challenger-akari",
+      "label": "Lantern",
+      "verdict": "competitive",
+      "lineage": "akari workshop: washi volumes, bamboo ribs, one bulb",
+      "thesis": "Each piece is a glowing paper volume in a dim room. You move between lit works, not through a reel.",
+      "palette": ["#f3ead6", "#c4a574", "#2a241c", "#c45a32", "#fff6e4"],
+      "materials": ["washi glow", "bamboo rib lines", "folded-flat rest state", "vermilion stamp"],
+      "viewport": "A warm paper lantern of the lead still fills the first room; student name as a brush-stamp; unlit pieces wait as rib outlines.",
+      "case": "Holds audience identification (studio craft, paper, light) but loses product clarity: lanterns can hide that this is a student’s published work.",
+      "risk": "Reads as a lamp shop if the still is treated as shade instead of the artifact.",
+      "comp": ".impeccable/mocks/decision/challenger-akari.webp",
+      "hero": "https://impeccable.style/worlds/cards/paper-folds-pleats-deployable-akari-light-sculpture-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/paper-folds-pleats-deployable-akari-light-sculpture.webp"
+    },
+    {
+      "id": "challenger-googie",
+      "label": "Starburst diner",
+      "verdict": "declined",
+      "lineage": "Googie roadside diner",
+      "thesis": "The folio as a swooping counter under a neon starburst.",
+      "palette": ["#2ec4b6", "#ff6b6b", "#1b1b1b", "#f4f0e6"],
+      "materials": ["laminate", "chrome trim", "neon starburst"],
+      "viewport": "Cantilever roof line from name to work to booths of pieces.",
+      "case": "Loses both axes: AFM students do not identify with a diner, and chrome orbits bury the stills.",
+      "kept": "One continuous cantilever sightline instead of stacked chrome.",
+      "hero": "https://impeccable.style/worlds/cards/design-canon-googie-starburst-diner-hero.webp"
+    },
+    {
+      "id": "challenger-racing",
+      "label": "Racing livery",
+      "verdict": "declined",
+      "lineage": "anti-aliased racing league",
+      "thesis": "Pieces as liveried crafts; picking one floods the page with team color.",
+      "palette": ["#ff4d00", "#e8ff3d", "#2b2b2b", "#f5f5f0"],
+      "materials": ["decal fields", "matte graphite", "hull numerals"],
+      "viewport": "A craft-shaped still with oversized numerals racing left to right.",
+      "case": "Loses both: invented sponsor energy fights student-work honesty.",
+      "kept": "Page-scale color flood committed from the still.",
+      "hero": "https://impeccable.style/worlds/cards/digital-design-canon-antialiased-racing-league-hero.webp"
+    },
+    {
+      "id": "challenger-daylight",
+      "label": "Daylight section",
+      "verdict": "declined",
+      "lineage": "inhabitable daylight section",
+      "thesis": "The folio as an architectural section the sun walks through.",
+      "palette": ["#f7f4ee", "#1a1a1a", "#e2b15c", "#5a6f88"],
+      "materials": ["limewash", "poche charcoal", "sunbeam gold"],
+      "viewport": "A long section drawing with the still occupying a sunlit room.",
+      "case": "Loses both: solar timestamps and poche obscure student pieces.",
+      "kept": "A traveling warmth band that marks place without numbering shots.",
+      "hero": "https://impeccable.style/worlds/cards/architecture-inhabitable-space-daylight-section-hero.webp"
+    },
+    {
+      "id": "challenger-shader",
+      "label": "Shader portal",
+      "verdict": "declined",
+      "lineage": "experiential WebGL portal",
+      "thesis": "A GPU scene fills the screen; type floats over living pixels.",
+      "palette": ["#0b1220", "#7aa2ff", "#f4f7ff"],
+      "materials": ["fragment shader", "film grain", "thin grotesk"],
+      "viewport": "One hero word over a breathing mesh; corner links dissolve scenes.",
+      "case": "Loses both: a synthetic mesh would replace the student’s still as the first artifact.",
+      "kept": "Thin type living inside the picture; the still is the portal.",
+      "hero": "https://impeccable.style/worlds/cards/webgl-shader-portal-hero.webp"
+    },
+    {
+      "id": "challenger-nixie",
+      "label": "Nixie counter",
+      "verdict": "declined",
+      "lineage": "laboratory nixie tubes",
+      "thesis": "Quantities glow as stacked glass digits.",
+      "palette": ["#ff6a18", "#0a0a0a", "#6a6a6a"],
+      "materials": ["glass envelopes", "blackened steel", "plasma digits"],
+      "viewport": "Tube banks of shot numbers as the interface.",
+      "case": "Loses both and collides with the anti-goal: numbered tubes are a slideshow with extra glass.",
+      "kept": "Physical depth: pieces occupy different hanging heights, never one swapping slot.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-nixie-laboratory-counter-hero.webp"
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "buildPath": { "value": "comp", "toggle": true },
+  "canon": true,
+  "canonCard": {
+    "label": "Contact sheet",
+    "thesis": "The category standard: numbered stills, one owning stage, a strip of thumbs. Played straight, not as a joke.",
+    "palette": ["#d7c7a5", "#161512", "#b42318", "#f4efe4"],
+    "materials": ["xerox manila", "shot numbers", "contact strip"],
+    "viewport": "Punched sheet, shot 01 on the stage, six-up strip below.",
+    "risk": "This is the slideshow the brief asked to leave.",
+    "comp": ".impeccable/mocks/decision/canon.webp"
+  },
+  "steer": true
+}

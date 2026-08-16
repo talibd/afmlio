@@ -1,0 +1,163 @@
+{
+  "title": "Choose the flagship taste",
+  "question": "Five taste worlds will ship. This roll assigns the default taste and the grammar the catalog hangs on. Exploration is already a contact sheet: the visitor reads numbered frames of student work. Garden chrome stays on the dashboard. Pick a world, re-roll, or play the category straight.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Sides / Call sheet",
+      "kicker": "THE ROLL",
+      "lineage": "Production call sheets and actor sides on a clipboard",
+      "thesis": "The folio is working paperwork: numbered setups, the still is the shot, the student is a scene header.",
+      "palette": ["#c9b896", "#161512", "#b42318", "#2a3f55", "#f4efe4"],
+      "materials": ["manila xerox", "3-hole punch", "brass fastener", "highlighter"],
+      "viewport": "A punched manila sheet: shot-list rail on the left, shot 01 still owning the page, name as SCENE / INT. STUDIO — DAY.",
+      "risk": "Can read film-only if the paperwork stays too literal for a painter or coder.",
+      "raised": [
+        { "from": "festival hoarding", "raise": "The sheet is already occupied with marks; one calm panel holds the still." },
+        { "from": "wildstyle blackbook", "raise": "Setup numbers ink in sequence, a marker stroke not a fade." },
+        { "from": "accretion disk", "raise": "Opening a frame is irreversible: the still takes the whole sheet." },
+        { "from": "emission-line rail", "raise": "Every destination is a tick on one shot-list rail; the open one blooms." },
+        { "from": "event display", "raise": "Select one setup and dim the rest; confidence is line weight." }
+      ],
+      "comp": ".impeccable/mocks/decision/assigned.webp",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "scene header", "x": 0, "y": 0, "w": 12, "h": 1 },
+          { "label": "shot rail", "x": 0, "y": 1, "w": 2, "h": 9, "accent": true },
+          { "label": "shot 01 still", "x": 2, "y": 1, "w": 10, "h": 8, "accent": true },
+          { "label": "slate caption", "x": 2, "y": 9, "w": 10, "h": 1 }
+        ]
+      }
+    },
+    {
+      "id": "model-pick",
+      "label": "Light table",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "Darkroom contact sheets on a 5000K light table",
+      "thesis": "The visitor is at the table; student work is film frames, the name is grease pencil.",
+      "palette": ["#d8e4ea", "#1c1814", "#c45c26", "#8a8478"],
+      "materials": ["backlit film", "grease pencil", "glass", "sleeves"],
+      "viewport": "A glowing table of numbered stills; one frame already larger; bio is a caption strip.",
+      "risk": "The direction most studio-portfolio runs land on, and the exploration we already locked.",
+      "comp": ".impeccable/mocks/decision/model-pick.webp",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "caption strip", "x": 0, "y": 0, "w": 12, "h": 1 },
+          { "label": "hero frame", "x": 0, "y": 1, "w": 8, "h": 6, "accent": true },
+          { "label": "frame 02", "x": 8, "y": 1, "w": 4, "h": 3 },
+          { "label": "frame 03", "x": 8, "y": 4, "w": 4, "h": 3 },
+          { "label": "contact row", "x": 0, "y": 7, "w": 12, "h": 3, "accent": true }
+        ]
+      }
+    },
+    {
+      "id": "challenger-kiln",
+      "label": "Kiln shelf",
+      "verdict": "competitive",
+      "lineage": "A kiln shelf of glazed cups, molten color arrested mid-run",
+      "thesis": "Student pieces sit in one fired row; gravity is the reading order, captions are recipe cards.",
+      "palette": ["#e8e2d6", "#1f3f73", "#0d0d0c", "#c45c26"],
+      "materials": ["chalk shelf", "cobalt glaze", "batch numerals", "fused puddles"],
+      "viewport": "A chalk-white shelf: one large still as a thick glaze tear, smaller stills as neighboring cups.",
+      "case": "Holds product clarity (work as samples in a row) and studio identification; loses to call sheets on AFM’s film-and-critique scene.",
+      "risk": "Reads ceramics-department unless the ‘vessels’ are clearly the student’s stills.",
+      "comp": ".impeccable/mocks/decision/challenger-kiln.webp",
+      "hero": "https://impeccable.style/worlds/cards/clay-ceramics-fracture-glaze-river-shelf-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/clay-ceramics-fracture-glaze-river-shelf.webp",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "shelf edge", "x": 0, "y": 0, "w": 12, "h": 1 },
+          { "label": "glaze still", "x": 0, "y": 1, "w": 7, "h": 7, "accent": true },
+          { "label": "cup 2", "x": 7, "y": 2, "w": 5, "h": 3 },
+          { "label": "cup 3", "x": 7, "y": 5, "w": 5, "h": 3 },
+          { "label": "recipe cards", "x": 0, "y": 8, "w": 12, "h": 2 }
+        ]
+      }
+    },
+    {
+      "id": "challenger-festival",
+      "label": "Festival hoarding",
+      "verdict": "declined",
+      "lineage": "Screenprinted street-fair flyers stacked on a hoarding",
+      "thesis": "Every inch is occupied; one calm panel is the only luxury left for the work.",
+      "palette": ["#F3EDE0", "#111111", "#FF6A00", "#EE1F8A", "#7B57F0"],
+      "materials": ["riso grain", "torn deckle", "stickers", "no photography"],
+      "viewport": "A full-bleed collage with one white finder panel holding a still.",
+      "case": "Loses identification (street fair, not critique) and clarity (grammar bans photography, which is the product).",
+      "kept": "Occupied field with one calm panel for the still.",
+      "hero": "https://impeccable.style/worlds/cards/fly-posted-festival-hoarding-built-hero.webp",
+      "comp": ".impeccable/mocks/decision/challenger-festival.webp"
+    },
+    {
+      "id": "challenger-wildstyle",
+      "label": "Wildstyle blackbook",
+      "verdict": "declined",
+      "lineage": "Marker pages where the name is knitted until barely readable",
+      "thesis": "The name is the map; you have to already know it to read it.",
+      "palette": ["#efe5d0", "#111111", "#2a6fdb", "#e23d28"],
+      "materials": ["marker", "offset keyline", "cream book paper"],
+      "viewport": "Interlocking letters as navigation, a throw-up in the corner as the fast version.",
+      "case": "Loses both: recruiters cannot parse a name they must already know.",
+      "kept": "Sequential marker-stroke motion for setup numbers.",
+      "hero": "https://impeccable.style/worlds/cards/vernacular-ephemera-wildstyle-blackbook-page-hero.webp"
+    },
+    {
+      "id": "challenger-accretion",
+      "label": "Accretion threshold",
+      "verdict": "declined",
+      "lineage": "A black-hole disk at the edge of disappearance",
+      "thesis": "One fragment slows, reddens, and vanishes across an irreversible threshold.",
+      "palette": ["#050508", "#d8e8ff", "#c45c26", "#e8c36a"],
+      "materials": ["void", "photon ring", "time-dilated bands"],
+      "viewport": "A still crossing a gold ring into unmarked black.",
+      "case": "Loses both: students do not identify with cosmology, and the work disappears.",
+      "kept": "Opening a frame is irreversible; the still takes the sheet.",
+      "hero": "https://impeccable.style/worlds/cards/galaxies-nebulae-deep-time-accretion-disk-threshold-hero.webp"
+    },
+    {
+      "id": "challenger-rail",
+      "label": "Emission-line rail",
+      "verdict": "declined",
+      "lineage": "A glass spectrogram on a 3am viewing box",
+      "thesis": "Every mark hangs off one off-centre rail; colour survives only as hairlines.",
+      "palette": ["#2a2a28", "#d8d2c4", "#e8c36a"],
+      "materials": ["charcoal continuum", "hairline emission", "bone legends"],
+      "viewport": "A grey band with needle lines; the open tick blooms a giant plate.",
+      "case": "Loses identification (lab night, not studio) and clarity (work fights the hairline law).",
+      "kept": "Destinations are ticks on one rail; the open one blooms.",
+      "hero": "https://impeccable.style/worlds/cards/operate-c-emission-line-rail-hero.webp"
+    },
+    {
+      "id": "challenger-detector",
+      "label": "Event display",
+      "verdict": "declined",
+      "lineage": "A collider cross-section with tracks blooming through detector rings",
+      "thesis": "One event at a time; pick a track, dim the rest.",
+      "palette": ["#0a0c10", "#8aa0b8", "#e8d44a", "#3ec8e8", "#e23d28"],
+      "materials": ["vacuum black", "steel rings", "signal tracks"],
+      "viewport": "Concentric rings with student stills as energy bars on the outer wedges.",
+      "case": "Loses both: physics-lab identification, and the work becomes a plot.",
+      "kept": "Isolate one setup and dim the rest; confidence as line weight.",
+      "hero": "https://impeccable.style/worlds/cards/scientific-notation-particle-detector-event-display-hero.webp"
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "canon": true,
+  "canonCard": {
+    "label": "Profession templates, played straight",
+    "thesis": "Photographer / Developer / Designer homepages with a resume hero, executed at full craft.",
+    "palette": ["#ffffff", "#111827", "#2563eb"],
+    "materials": ["clean grid", "product photography", "sans UI"],
+    "viewport": "Name, title, and CTA above the fold; work in a later grid.",
+    "risk": "The brief refused this: taste not profession, work first. Still the user’s door.",
+    "comp": ".impeccable/mocks/decision/canon.webp"
+  },
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": true }
+}

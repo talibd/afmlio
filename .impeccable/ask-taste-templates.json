@@ -1,0 +1,36 @@
+{
+  "title": "How should student work be entered?",
+  "question": "Taste templates are settled: not job titles, work-first, garden chrome stays on the dashboard. What should a visitor do inside a public folio?",
+  "options": [
+    {
+      "id": "contact-sheet",
+      "label": "Contact sheet",
+      "kicker": "SETTLED + CONFIRM",
+      "thesis": "The page is a light table of student frames; the visitor reads the work as a numbered sequence.",
+      "palette": ["#c4b89a", "#1a1a16", "#f2efe6", "#8a1c12"],
+      "materials": ["backlit film", "grease-pencil numbers", "glass"],
+      "viewport": "A full-width strip of stills with the student’s name as a caption, not a resume hero.",
+      "risk": "Can feel archival if the frames are too small to inhabit."
+    },
+    {
+      "id": "pin-up",
+      "label": "Critique pin-up",
+      "thesis": "Pieces hang at mixed scale on a studio wall; the visitor walks the hang, then steps closer.",
+      "palette": ["#e8e0d2", "#2c2a26", "#6b5344", "#d4541c"],
+      "materials": ["pushpins", "foam core", "pencil captions"],
+      "viewport": "One large print and two smaller stills already on the wall; bio is a wall label.",
+      "risk": "Reads as a mood board if the hang has no spatial logic."
+    },
+    {
+      "id": "dailies",
+      "label": "Screening dailies",
+      "thesis": "One piece owns the room; the next piece replaces it like a reel change.",
+      "palette": ["#0c0c0b", "#e8e4d8", "#c45c26", "#3a3a36"],
+      "materials": ["velvet dark", "title cards", "projector beam"],
+      "viewport": "A single still or clip fills the first viewport; name and taste sit as a title card overlay.",
+      "risk": "Hides the body of work until the visitor clicks; internships may want more at a glance."
+    }
+  ],
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false }
+}

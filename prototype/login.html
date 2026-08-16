@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in — AFM Portfolio</title>
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body class="auth">
+    <a class="skip" href="#main">Skip to content</a>
+    <main id="main" class="auth-card">
+      <a class="mark" href="index.html">
+        <i class="mark-stamp" aria-hidden="true"></i>
+        <strong>AFM</strong>
+      </a>
+      <h1>Welcome back</h1>
+      <p class="lede">Sign in to continue.</p>
+      <form action="dashboard.html" method="get">
+        <label class="field">
+          <span>Email</span>
+          <input type="email" name="email" autocomplete="username" placeholder="talib@afm.student" required />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input type="password" name="password" autocomplete="current-password" placeholder="Your password" required />
+        </label>
+        <button class="btn btn-primary" type="submit">Continue</button>
+      </form>
+      <p class="auth-switch">New student? <a href="signup.html">Create an account</a></p>
+    </main>
+  </body>
+</html>

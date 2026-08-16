@@ -1,0 +1,39 @@
+{
+  "title": "Lock The Walk composition",
+  "question": "Three compositions of The Walk. Which first viewport should the public folio build against?",
+  "options": [
+    {
+      "id": "walk-a",
+      "label": "One wall",
+      "kicker": "DECISION COMP",
+      "thesis": "The still is the first room. Type sits in the picture. The next rooms wait below.",
+      "palette": ["#1a1d22", "#f2ece3", "#c45a1a", "#2f5a46"],
+      "materials": ["hung still", "wall label", "gold floor-band"],
+      "viewport": "Full-bleed student still as wall; name as a corner label; warmth band at the floor; large hangings hinted below.",
+      "risk": "If the below-fold hangings shrink to thumbs, it becomes a slideshow again.",
+      "comp": ".impeccable/mocks/walk-a.webp"
+    },
+    {
+      "id": "walk-b",
+      "label": "Two rooms",
+      "thesis": "The first viewport already shows the suite: a large room and a second hanging beside it.",
+      "palette": ["#1a1d22", "#2f5a46", "#c45a1a", "#f2ece3"],
+      "materials": ["split rooms", "staggered hang height", "continuous floor-band"],
+      "viewport": "62/38 two-room split; gold band crosses both; type in the left still.",
+      "risk": "A split can read as a magazine layout instead of walking a suite.",
+      "comp": ".impeccable/mocks/walk-b.webp"
+    },
+    {
+      "id": "walk-c",
+      "label": "Nameplate wall",
+      "thesis": "The name is architecture on the still; walking continues as staggered hangings under the fold.",
+      "palette": ["#1a1d22", "#e8e0d2", "#c45a1a"],
+      "materials": ["overlapping wordmark", "full-bleed still", "staggered hangings"],
+      "viewport": "Huge name across the still; small corner links; next rooms below.",
+      "risk": "Easy to slide back into a single hero with a next-slide control.",
+      "comp": ".impeccable/mocks/walk-c.webp"
+    }
+  ],
+  "steer": true,
+  "buildPath": { "value": "comp", "toggle": false }
+}
