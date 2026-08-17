@@ -67,6 +67,39 @@ The app boots and serves without valid R2 values, but uploads fail until real
 credentials and the bucket CORS rule exist. `STORAGE_DRIVER=local` is refused
 in production images by design.
 
+## Coolify
+
+Create a resource from this Git repository with the **Docker Compose** build
+pack pointed at `docker-compose.yml`. The `app` service carries the
+`SERVICE_FQDN_APP` magic variable, so Coolify treats it as the HTTP entrypoint:
+
+1. **Domain** — on the app service, set your domain (e.g.
+   `https://folio.example.com`). Coolify's proxy terminates TLS and forwards
+   the original host headers, which the CSRF guard relies on. Container port
+   is 3000.
+2. **Environment** — set in Coolify's env UI: `POSTGRES_PASSWORD`,
+   `UPLOAD_TICKET_SECRET` (32+ chars), the five `R2_*` values, and
+   `APP_URL`/`ALLOWED_ORIGINS` matching the domain. Do not set
+   `STORAGE_DRIVER`.
+3. **R2 CORS** — add the production origin to the bucket's CORS rule
+   (browser uploads PUT directly to R2):
+
+   ```bash
+   curl -X PUT "https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/r2/buckets/<BUCKET>/cors" \
+     -H "Authorization: Bearer <R2_API_TOKEN>" -H "Content-Type: application/json" \
+     -d '{"rules":[{"allowed":{"origins":["https://folio.example.com"],"methods":["GET","PUT","HEAD"],"headers":["Content-Type"]},"exposeHeaders":["ETag"],"maxAgeSeconds":3600}]}'
+   ```
+
+   For production delivery, prefer a custom domain on the bucket over the
+   rate-limited `r2.dev` URL and update `R2_PUBLIC_BASE_URL` accordingly.
+4. **Migrations** — the one-shot `migrate` service runs on every deploy before
+   the app starts; Drizzle migrations are idempotent.
+5. The Postgres volume (`afm-db-data`) persists across deploys; use Coolify's
+   scheduled backups for it.
+
+`docker-compose.override.yml` only adds a host port for local runs — Coolify
+ignores it.
+
 ## Single container (external database)
 
 ```bash

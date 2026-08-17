@@ -1,0 +1,7 @@
+# Local-only additions; docker compose merges this automatically.
+# Coolify deploys from docker-compose.yml alone, so no host port is published
+# on the server — its proxy handles the domain.
+services:
+  app:
+    ports:
+      - "${APP_PORT:-3000}:3000"
