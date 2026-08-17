@@ -7,8 +7,12 @@ import {
   FilePenLine,
   Globe,
   LayoutGrid,
+  Link2,
   Plus,
+  Share2,
 } from "lucide-react"
+import { toast } from "sonner"
+
 import { usePortfolioSummaries } from "@/hooks/use-portfolio-summaries"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,6 +20,66 @@ import { cn } from "@/lib/utils"
 
 const chip =
   "flex h-11 items-center justify-center gap-2 rounded-lg border bg-secondary px-3 text-muted-foreground max-md:text-sm md:justify-start md:px-4"
+
+/** Copy / share the public /p/[slug] link. Drafts keep the buttons visible but
+ *  disabled — the public URL only exists once the portfolio is published. */
+function PortfolioLinkActions({ slug, name, live }: { slug: string; name: string; live: boolean }) {
+  const publicUrl = () => `${window.location.origin}/p/${slug}`
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(publicUrl())
+      toast.success("Public link copied")
+    } catch {
+      toast.error("Could not copy the link")
+    }
+  }
+
+  async function shareLink() {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${name} — AFM portfolio`, url: publicUrl() })
+      } catch (error) {
+        // Closing the share sheet is not an error.
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          await copyLink()
+        }
+      }
+      return
+    }
+    await copyLink()
+  }
+
+  const hint = live ? undefined : "Publish first to get a public link"
+  return (
+    <div className="flex shrink-0 items-center">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-9 rounded-lg text-muted-foreground hover:text-foreground"
+        aria-label={live ? `Copy public link to ${name}` : `Copy link (publish ${name} first)`}
+        title={hint ?? "Copy public link"}
+        disabled={!live}
+        onClick={copyLink}
+      >
+        <Link2 className="size-4" />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-9 rounded-lg text-muted-foreground hover:text-foreground"
+        aria-label={live ? `Share ${name}` : `Share (publish ${name} first)`}
+        title={hint ?? "Share portfolio"}
+        disabled={!live}
+        onClick={shareLink}
+      >
+        <Share2 className="size-4" />
+      </Button>
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const portfolios = usePortfolioSummaries()
@@ -109,13 +173,15 @@ export default function DashboardPage() {
             {portfolios.map((p) => {
               const Icon = p.status === "live" ? Globe : FilePenLine
               return (
-                <a
+                <div
                   key={p.slug}
-                  href={`/edit/${p.slug}`}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-card px-3 py-3 transition-colors hover:bg-(--card-hover) md:pr-4"
+                  className="flex items-center gap-1 rounded-xl bg-card pr-2 transition-colors hover:bg-(--card-hover) md:pr-3"
                 >
-                  <div className="flex items-center gap-3 overflow-hidden md:gap-4">
-                    <div className="flex size-11 items-center justify-center rounded-lg border bg-sidebar text-muted-foreground">
+                  <a
+                    href={`/edit/${p.slug}`}
+                    className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 md:gap-4"
+                  >
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border bg-sidebar text-muted-foreground">
                       <Icon className="size-4" />
                     </div>
                     <div className="flex flex-col gap-1.5 overflow-hidden md:gap-2">
@@ -131,12 +197,13 @@ export default function DashboardPage() {
                         <span>{p.status === "live" ? "Live" : "Draft"}</span>
                       </div>
                     </div>
-                  </div>
-                  <span className="flex size-9 items-center justify-center text-muted-foreground">
-                    <ExternalLink className="size-4" />
-                    <span className="sr-only">Edit</span>
-                  </span>
-                </a>
+                    <span className="ml-auto flex size-9 shrink-0 items-center justify-center text-muted-foreground max-md:hidden">
+                      <ExternalLink className="size-4" />
+                      <span className="sr-only">Edit</span>
+                    </span>
+                  </a>
+                  <PortfolioLinkActions slug={p.slug} name={p.name} live={p.status === "live"} />
+                </div>
               )
             })}
           </div>
