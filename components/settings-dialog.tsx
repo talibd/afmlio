@@ -19,11 +19,7 @@ import { PortfolioMediaPanel } from "@/components/portfolio-media-panel"
 import { TemplatePicker } from "@/components/template-picker"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { type TemplateId } from "@/lib/demo"
-import {
-  publish,
-  saveDraft,
-  type StoredPortfolio,
-} from "@/lib/portfolio-store"
+import { type StoredPortfolio } from "@/lib/portfolio-store"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -217,15 +213,8 @@ function PublicPagePanel({
       className="flex flex-col gap-6"
       onSubmit={(event) => {
         event.preventDefault()
-        const next = {
-          ...draft,
-          slug: pageSlug,
-          status: live ? ("live" as const) : ("draft" as const),
-        }
-        onSave({ slug: pageSlug, status: next.status })
-        saveDraft(pageSlug, next)
-        if (live) publish(pageSlug, next)
-        toast.success("Page settings saved")
+        onSave({ slug: pageSlug })
+        toast.success(live ? "Page settings saved. Publish to update the live page." : "Page settings saved")
       }}
     >
       <Field>
@@ -358,13 +347,11 @@ function SettingsBody({
 }
 
 export function SettingsDialog({
-  slug,
   draft,
   onSave,
   onTemplateChange,
   trigger,
 }: {
-  slug: string
   draft: StoredPortfolio
   onSave: (patch: Partial<StoredPortfolio>) => void
   onTemplateChange: (id: TemplateId) => void
@@ -439,7 +426,6 @@ export function SettingsDialog({
                 draft={draft}
                 onSave={(patch) => {
                   onSave(patch)
-                  saveDraft(slug, { ...draft, ...patch })
                 }}
                 onTemplateChange={onTemplateChange}
               />

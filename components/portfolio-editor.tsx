@@ -2,35 +2,27 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { LayoutDashboard, Settings } from "lucide-react"
+import { Settings } from "lucide-react"
 import { toast } from "sonner"
 
+import { DashboardHeader, SidebarBrand } from "@/components/app-sidebar"
 import { BlockSidebar } from "@/components/block-sidebar"
 import { FolioCanvas } from "@/components/folio-view"
 import { PreviewDock, PREVIEW_WIDTH, type PreviewSize } from "@/components/preview-dock"
 import { SettingsDialog } from "@/components/settings-dialog"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { useEditorHistory } from "@/hooks/use-editor-history"
 import { isStaleLayout, reapplyTemplateChrome } from "@/lib/blocks"
 import { coerceTemplate, type FolioBlock, type TemplateId } from "@/lib/demo"
+import { getOwnedPortfolioBySlug, publishPortfolio, savePortfolioDraft } from "@/lib/portfolio-api-client"
 import {
   getBaseDraft,
-  getDraft,
-  getLive,
-  hasDraftChanges,
-  hasLive,
-  publish,
-  saveDraft,
   type StoredPortfolio,
 } from "@/lib/portfolio-store"
 import { Button } from "@/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
@@ -73,21 +65,23 @@ function syncFieldsToBlocks(draft: StoredPortfolio): FolioBlock[] {
   })
 }
 
-function useDebouncedSave(slug: string, draft: StoredPortfolio, delay = 600) {
+function useDebouncedSave(portfolioId: string | null, draft: StoredPortfolio, onSaved: (draft: StoredPortfolio) => void, delay = 700) {
   const first = React.useRef(true)
-  const [saveState, setSaveState] = React.useState<"saving" | "saved">("saved")
+  const [saveState, setSaveState] = React.useState<"saving" | "saved" | "error">("saved")
   React.useEffect(() => {
     if (first.current) {
       first.current = false
       return
     }
-    setSaveState("saving")
+    if (!portfolioId) return
     const id = window.setTimeout(() => {
-      saveDraft(slug, draft)
-      setSaveState("saved")
+      setSaveState("saving")
+      void savePortfolioDraft(portfolioId, draft)
+        .then(() => { setSaveState("saved"); onSaved(draft) })
+        .catch(() => setSaveState("error"))
     }, delay)
     return () => window.clearTimeout(id)
-  }, [slug, draft, delay])
+  }, [portfolioId, draft, delay, onSaved])
   return saveState
 }
 
@@ -107,40 +101,60 @@ export function PortfolioEditor({
     () => initial.blocks?.[0]?.id ?? "",
   )
   const [size, setSize] = React.useState<PreviewSize>("desktop")
-  const savedAt = draft.updatedAt || null
+  const [savedAt, setSavedAt] = React.useState<number | null>(null)
   const [liveAt, setLiveAt] = React.useState<number | null>(null)
-  const [mounted, setMounted] = React.useState(false)
+  const [portfolioId, setPortfolioId] = React.useState<string | null>(null)
+  const [publishedHash, setPublishedHash] = React.useState<string | null>(null)
+  const [isLive, setIsLive] = React.useState(false)
+  const [loadError, setLoadError] = React.useState("")
 
-  // Hydrate stored draft from localStorage after mount to ensure 100% SSR match
   React.useEffect(() => {
-    setMounted(true)
-    setLiveAt(getLive(slug)?.publishedAt ?? null)
+    const controller = new AbortController()
+    void getOwnedPortfolioBySlug(slug, controller.signal)
+      .then((record) => {
+        const stored = record.draftSnapshot as unknown as StoredPortfolio
+        const template = templateHint
+          ? coerceTemplate(templateHint)
+          : stored.template ? coerceTemplate(stored.template) : initial.template
+        const merged: StoredPortfolio = {
+          ...initial,
+          ...stored,
+          slug: record.slug,
+          name: record.name,
+          status: record.status === "published" ? "live" : "draft",
+          template,
+          blocks: stored.blocks?.length && !isStaleLayout(stored.blocks) ? stored.blocks : initial.blocks,
+          updatedAt: new Date(record.updatedAt).getTime(),
+        }
+        resetDraft(merged)
+        setPortfolioId(record.id)
+        setSavedAt(merged.updatedAt)
+        setIsLive(record.status === "published")
+        setLiveAt(record.publishedAt ? new Date(record.publishedAt).getTime() : null)
+        /* Dirty-tracking compares serializations of the CLIENT draft, so the
+           baseline must be produced from the same object. Server-side the two
+           snapshots are directly comparable; when they match, today's merged
+           draft IS the published state. A sentinel keeps "diverged" truthy so
+           never-published and edited-since-publish stay distinguishable. */
+        setPublishedHash(
+          record.publishedSnapshot
+            ? JSON.stringify(record.publishedSnapshot) === JSON.stringify(record.draftSnapshot)
+              ? JSON.stringify(merged)
+              : "__diverged__"
+            : null
+        )
+        if (merged.blocks?.[0]?.id) setSelectedId(merged.blocks[0].id)
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return
+        setLoadError(error instanceof Error ? error.message : "Could not load this portfolio.")
+      })
+    return () => controller.abort()
+  }, [slug, templateHint, initial, resetDraft])
 
-    const stored = getDraft(slug)
-    if (stored) {
-      const template = templateHint
-        ? coerceTemplate(templateHint)
-        : (stored.template ? coerceTemplate(stored.template) : initial.template)
-      const merged: StoredPortfolio = {
-        ...initial,
-        ...stored,
-        template,
-        blocks:
-          stored.blocks?.length && !isStaleLayout(stored.blocks)
-            ? stored.blocks
-            : initial.blocks,
-      }
-      resetDraft(merged)
-      if (merged.blocks?.[0]?.id) {
-        setSelectedId((curr) => curr || merged.blocks![0].id)
-      }
-    }
-  }, [slug, templateHint])
-
-  const dirty = mounted ? hasDraftChanges(slug, draft) : false
-  const isLive = mounted ? (draft.status === "live" && hasLive(slug)) : false
-
-  const saveState = useDebouncedSave(slug, draft)
+  const dirty = portfolioId ? !publishedHash || JSON.stringify(draft) !== publishedHash : false
+  const onSaved = React.useCallback(() => setSavedAt(Date.now()), [])
+  const saveState = useDebouncedSave(portfolioId, draft, onSaved)
 
   React.useEffect(() => {
     function onBeforeUnload(event: BeforeUnloadEvent) {
@@ -166,13 +180,15 @@ export function PortfolioEditor({
       }
       if (event.key === "s") {
         event.preventDefault()
-        saveDraft(slug, draft)
-        toast.success("Draft saved")
+        if (!portfolioId) return
+        void savePortfolioDraft(portfolioId, draft)
+          .then(() => { setSavedAt(Date.now()); toast.success("Draft saved") })
+          .catch((error) => toast.error(error instanceof Error ? error.message : "Could not save draft"))
       }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [slug, draft, undo, redo])
+  }, [portfolioId, draft, undo, redo])
 
   function patchDraft(patch: Partial<StoredPortfolio>) {
     setDraft((current) => {
@@ -210,11 +226,21 @@ export function PortfolioEditor({
     toast.success(`Taste: ${next}`)
   }
 
-  function handlePublish() {
-    const live = publish(slug, { ...draft, status: "live" })
-    setDraft((current) => ({ ...current, status: "live" }))
-    setLiveAt(live.publishedAt)
-    toast.success("Published. Your live page is updated.")
+  async function handlePublish() {
+    if (!portfolioId) return
+    try {
+      const saved = { ...draft, status: "live" as const, updatedAt: Date.now() }
+      await savePortfolioDraft(portfolioId, saved)
+      const live = await publishPortfolio(portfolioId)
+      setDraft(saved)
+      setIsLive(true)
+      setSavedAt(saved.updatedAt)
+      setPublishedHash(JSON.stringify(saved))
+      setLiveAt(live.publishedAt ? new Date(live.publishedAt).getTime() : Date.now())
+      toast.success("Published. Your live page is updated.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not publish your portfolio.")
+    }
   }
 
   function selectBlock(id: string) {
@@ -225,9 +251,13 @@ export function PortfolioEditor({
   const inspectBlock =
     liveBlocks.find((block) => block.id === selectedId) ?? liveBlocks[0]
   const activeId = inspectBlock?.id ?? ""
-  const publicUrl = mounted
-    ? `${window.location.origin}/p/${draft.slug}?preview=1`
-    : `/p/${draft.slug}?preview=1`
+  // Relative on purpose: it is only ever an href, and a window.location branch
+  // here renders differently on the server than on the client (hydration error).
+  const publicUrl = `/p/${draft.slug}?preview=1`
+
+  if (loadError) {
+    return <div className="afm-dashboard flex min-h-svh items-center justify-center bg-background p-6 text-center"><div className="max-w-md space-y-3"><h1 className="text-2xl font-semibold tracking-tight">Portfolio unavailable</h1><p className="text-sm leading-6 text-muted-foreground">{loadError}</p><Button render={<Link href="/dashboard" />}>Return to dashboard</Button></div></div>
+  }
 
   return (
     <SidebarProvider
@@ -235,31 +265,8 @@ export function PortfolioEditor({
       style={{ "--sidebar-width": "17.25rem" } as React.CSSProperties}
     >
       <Sidebar className="h-full border-none" collapsible="offcanvas">
-        <SidebarHeader className="flex-row items-center justify-between gap-2 px-4 pt-6 pb-0">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="flex size-5.5 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <span className="size-2 rounded-[2px] bg-current" aria-hidden />
-            </span>
-            <span className="text-xl font-semibold tracking-tight">AFM</span>
-          </Link>
-          <span
-            className={cn(
-              "rounded-md px-2 py-1.5 text-xxs",
-              dirty && saveState !== "saving"
-                ? "bg-amber-500/15 text-amber-800 dark:text-amber-200"
-                : "bg-(--sidebar-badge) text-sidebar-foreground/70",
-            )}
-          >
-            {saveState === "saving"
-              ? "Saving…"
-              : dirty
-                ? "Unpublished"
-                : isLive
-                  ? "Live"
-                  : "Draft saved"}
-          </span>
-        </SidebarHeader>
-        <SidebarContent className="mt-6 min-h-0 gap-0 overflow-hidden px-4">
+        <SidebarBrand badge="Editor" />
+        <SidebarContent className="mt-6 min-h-0 overflow-hidden px-4">
           <BlockSidebar
             draft={draft}
             selectedId={activeId}
@@ -267,43 +274,58 @@ export function PortfolioEditor({
             onBlocks={setBlocks}
           />
         </SidebarContent>
-        <SidebarFooter className="flex-row items-center justify-start gap-2 px-4 pb-6">
-          <SettingsDialog
-            slug={slug}
-            draft={draft}
-            onSave={patchDraft}
-            onTemplateChange={switchTemplate}
-            trigger={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-10 rounded-lg"
-                aria-label="Settings"
-                title="Settings"
-              >
-                <Settings className="size-4" />
-              </Button>
-            }
-          />
-          <ThemeToggle className="size-10 rounded-lg" />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-10 rounded-lg"
-            aria-label="Dashboard"
-            title="Dashboard"
-            render={<Link href="/dashboard" />}
-          >
-            <LayoutDashboard className="size-4" />
-          </Button>
-        </SidebarFooter>
       </Sidebar>
       <main className="min-h-0 flex-1 overflow-hidden md:bg-sidebar md:p-2">
-        <div className="relative h-full overflow-hidden bg-background md:rounded-xl">
-          <SidebarTrigger className="absolute top-3 left-3 z-10 size-9 md:hidden [&_svg]:size-5!" />
-          <div className="h-full overflow-y-auto pb-24">
+        <div className="relative flex h-full flex-col overflow-hidden bg-background md:rounded-xl">
+          <DashboardHeader
+            crumb="Editor"
+            studio={draft.name}
+            /* DashboardHeader already renders the ThemeToggle; actions only
+               replaces the portfolio switcher slot. */
+            actions={
+              <>
+                <span
+                  aria-live="polite"
+                className={cn(
+                  "rounded-md px-2.5 py-1.5 text-xxs",
+                  saveState === "error"
+                    ? "bg-destructive/10 text-destructive"
+                    : dirty && saveState !== "saving"
+                      ? "bg-amber-500/15 text-amber-800 dark:text-amber-200"
+                      : "bg-(--sidebar-badge) text-sidebar-foreground/70",
+                )}
+              >
+                {saveState === "error"
+                  ? "Save failed"
+                  : saveState === "saving"
+                    ? "Saving…"
+                    : dirty
+                      ? "Unpublished"
+                      : isLive
+                        ? "Live"
+                        : "Draft saved"}
+                </span>
+                <SettingsDialog
+                  draft={draft}
+                  onSave={patchDraft}
+                  onTemplateChange={switchTemplate}
+                  trigger={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-9 rounded-lg"
+                      aria-label="Settings"
+                      title="Settings"
+                    >
+                      <Settings className="size-4" />
+                    </Button>
+                  }
+                />
+              </>
+            }
+          />
+          <div className="min-h-0 flex-1 overflow-y-auto pb-24">
             <div className={PREVIEW_WIDTH[size]}>
               <FolioCanvas
                 portfolio={draft}
@@ -330,7 +352,12 @@ export function PortfolioEditor({
               patchDraft({ seo: { ...draft.seo, indexable } })
             }
             onPublish={handlePublish}
-            onSaveDraft={() => saveDraft(slug, draft)}
+            onSaveDraft={() => {
+              if (!portfolioId) return
+              void savePortfolioDraft(portfolioId, draft)
+                .then(() => { setSavedAt(Date.now()); toast.success("Draft saved") })
+                .catch((error) => toast.error(error instanceof Error ? error.message : "Could not save draft"))
+            }}
             onUndo={undo}
             onRedo={redo}
             canUndo={canUndo}

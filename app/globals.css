@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./tastes.css";
+@import "./frame-onboarding.css";
 
 @custom-variant dark (&:is(.dark *));
 

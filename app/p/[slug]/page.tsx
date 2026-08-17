@@ -1,13 +1,13 @@
-import { redirect } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 
-import { PortfolioPublicView, PortfolioDraftPreview } from "@/components/portfolio-public-view"
-import { buildPublicMetadata, demoPortfolio } from "@/lib/portfolio-public"
+import { FolioView } from "@/components/folio-view"
+import { PortfolioDraftPreview } from "@/components/portfolio-public-view"
+import { coerceTemplate } from "@/lib/demo"
+import { buildPublicMetadata, getPublishedPortfolio } from "@/lib/portfolio-public"
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
+export const dynamic = "force-dynamic"
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   return buildPublicMetadata(slug)
 }
@@ -20,24 +20,12 @@ export default async function PortfolioPage({
   searchParams: Promise<{ edit?: string; template?: string; preview?: string }>
 }) {
   const { slug } = await params
-  const q = await searchParams
+  const query = await searchParams
 
-  if (q.edit === "1") {
-    const query = q.template ? `?template=${q.template}` : ""
-    redirect(`/edit/${slug}${query}`)
-  }
+  if (query.edit === "1") redirect(`/edit/${slug}`)
+  if (query.preview === "1") return <PortfolioDraftPreview slug={slug} templateHint={query.template} />
 
-  if (q.preview === "1") {
-    return <PortfolioDraftPreview slug={slug} templateHint={q.template} />
-  }
-
-  const fallback = demoPortfolio(slug)
-
-  return (
-    <PortfolioPublicView
-      slug={slug}
-      fallback={fallback}
-      templateHint={q.template}
-    />
-  )
+  const portfolio = await getPublishedPortfolio(slug)
+  if (!portfolio) notFound()
+  return <FolioView portfolio={portfolio} template={coerceTemplate(portfolio.template)} />
 }

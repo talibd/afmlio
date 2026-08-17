@@ -58,6 +58,33 @@
   --taste-radius: 0px;
 }
 
+/* Frame derives every remaining colour from ink/paper so a variant only has to
+   restate the four roles above. Mixed rather than fixed greys keep the same
+   contrast on a dark ground as on a light one. */
+.taste-frame {
+  /* Responds to its own width, not the viewport, so the editor's phone
+     preview and the style-picker miniatures render what a real phone gets. */
+  container-type: inline-size;
+  /* Mixed high enough that the 9-12px meta labels clear 4.5:1 on every
+     variant ground, light or dark, while keeping two visible tiers. */
+  --frame-mute: color-mix(in srgb, var(--taste-ink, #111111) 80%, var(--taste-paper, #ffffff));
+  --frame-faint: color-mix(in srgb, var(--taste-ink, #111111) 66%, var(--taste-paper, #ffffff));
+  --frame-solid: var(--taste-ink, #111111);
+  --frame-on-solid: var(--taste-paper, #ffffff);
+  --frame-on-accent: #111111;
+  --frame-media-bg: color-mix(in srgb, var(--taste-ink, #111111) 10%, var(--taste-paper, #ffffff));
+  --frame-panel: var(--taste-paper, #ffffff);
+  --frame-measure: 1100px;
+  --frame-section: 100px;
+  --frame-rule: 1px;
+  --frame-card-radius: 0px;
+  --frame-card-aspect: 1.3 / 1;
+  --frame-featured-aspect: 2 / 1;
+  --frame-hero-size: clamp(55px, 8cqw, 100px);
+  --frame-hero-tracking: -0.07em;
+  --frame-display-tracking: -0.05em;
+}
+
 .taste[data-taste="walk"] {
   --taste-ink: #f2ece3;
   --taste-paper: #1a1d22;
@@ -530,34 +557,43 @@
   min-height: 100%;
   background: var(--taste-paper, #ffffff);
   color: var(--taste-ink, #111111);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--taste-body, Arial, Helvetica, sans-serif);
 }
 
 .taste-frame-container {
-  width: min(1100px, calc(100% - 40px));
+  width: min(var(--frame-measure, 1100px), calc(100% - 40px));
   margin: auto;
 }
 
 .taste-frame-nav {
   height: 64px;
-  border-bottom: 1px solid var(--taste-line, #e8e8e8);
+  border-bottom: var(--frame-rule, 1px) solid var(--taste-line, #e8e8e8);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 .taste-frame-logo {
-  font-family: Georgia, "Times New Roman", serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--taste-display, Georgia, "Times New Roman", serif);
   font-size: 20px;
   font-weight: 400;
   letter-spacing: -0.02em;
+}
+
+.taste-frame-logo-mark {
+  width: 1.75rem;
+  height: 1.75rem;
+  object-fit: contain;
 }
 
 .taste-frame-links {
   display: flex;
   gap: 24px;
   font-size: 12px;
-  color: #666666;
+  color: var(--frame-faint, #666666);
 }
 
 .taste-frame-links a {
@@ -565,14 +601,17 @@
 }
 
 .taste-frame-links a:hover {
-  color: #111111;
+  color: var(--taste-ink, #111111);
 }
 
-.taste-frame-contact-btn {
+/* `.taste a { color: inherit }` outranks a lone class on an anchor, so the
+   solid actions have to match its specificity or they render ink on ink. */
+.taste .taste-frame-contact-btn {
   font-size: 11px;
   padding: 9px 13px;
-  background: #111111;
-  color: #ffffff;
+  background: var(--frame-solid, #111111);
+  color: var(--frame-on-solid, #ffffff);
+  border-radius: var(--frame-button-radius, 0);
   font-weight: 500;
   letter-spacing: 0.05em;
   transition: opacity 0.2s ease;
@@ -586,35 +625,36 @@
 
 /* Hero Section */
 .taste-frame-hero {
-  padding: 100px 0 70px;
+  padding: var(--frame-section, 100px) 0 calc(var(--frame-section, 100px) * 0.7);
 }
 
 .taste-frame-hero h1 {
   max-width: 850px;
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(55px, 8vw, 100px);
-  font-weight: 400;
-  line-height: 0.9;
-  letter-spacing: -0.07em;
+  font-family: var(--taste-display, Georgia, "Times New Roman", serif);
+  font-size: var(--frame-hero-size, clamp(55px, 8cqw, 100px));
+  font-weight: var(--frame-display-weight, 400);
+  line-height: var(--frame-hero-leading, 0.9);
+  letter-spacing: var(--frame-hero-tracking, -0.07em);
 }
 
 .taste-frame-hero h1 span {
-  color: #888888;
+  color: var(--frame-faint, #888888);
 }
 
 .taste-frame-hero p {
   max-width: 520px;
   margin: 25px 0;
-  color: #666666;
+  color: var(--frame-mute, #666666);
   font-size: 14px;
   line-height: 1.7;
 }
 
-.taste-frame-hero-link {
+.taste .taste-frame-hero-link {
   display: inline-block;
-  background: #111111;
-  color: #ffffff;
+  background: var(--frame-solid, #111111);
+  color: var(--frame-on-solid, #ffffff);
+  border-radius: var(--frame-button-radius, 0);
   padding: 12px 16px;
   font-size: 11px;
   letter-spacing: 0.05em;
@@ -628,10 +668,11 @@
 /* Featured Banner */
 .taste-frame-featured {
   margin-top: 45px;
-  aspect-ratio: 2 / 1;
+  aspect-ratio: var(--frame-featured-aspect, 2 / 1);
   position: relative;
   overflow: hidden;
-  background: #dddddd;
+  border-radius: var(--frame-card-radius, 0);
+  background: var(--frame-media-bg, #dddddd);
   cursor: pointer;
 }
 
@@ -641,6 +682,18 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.taste-frame-media-empty {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  color: color-mix(in srgb, var(--taste-ink, #111111) 56%, transparent);
+  background: color-mix(in srgb, var(--taste-ink, #111111) 6%, var(--taste-paper, #ffffff));
+  font-size: 12px;
+  text-align: center;
 }
 
 .taste-frame-featured:hover img,
@@ -660,7 +713,7 @@
 }
 
 .taste-frame-featured-title {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--taste-display, Georgia, "Times New Roman", serif);
   font-size: 32px;
   font-weight: 400;
   line-height: 1.1;
@@ -675,14 +728,14 @@
 
 /* Work Section */
 .taste-frame-work {
-  padding: 100px 0;
+  padding: var(--frame-section, 100px) 0;
 }
 
 .taste-frame-section-title {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 48px;
-  font-weight: 400;
-  letter-spacing: -0.05em;
+  font-family: var(--taste-display, Georgia, "Times New Roman", serif);
+  font-size: var(--frame-section-title-size, 48px);
+  font-weight: var(--frame-display-weight, 400);
+  letter-spacing: var(--frame-display-tracking, -0.05em);
   margin: 0 0 28px;
 }
 
@@ -694,9 +747,10 @@
 }
 
 .taste-frame-filter {
-  border: 1px solid #dddddd;
-  background: #ffffff;
-  color: #111111;
+  border: 1px solid var(--taste-line, #dddddd);
+  background: transparent;
+  color: var(--taste-ink, #111111);
+  border-radius: var(--frame-button-radius, 0);
   padding: 8px 12px;
   font-size: 10px;
   letter-spacing: 0.05em;
@@ -706,19 +760,30 @@
 }
 
 .taste-frame-filter:hover {
-  border-color: #111111;
+  border-color: var(--taste-ink, #111111);
 }
 
 .taste-frame-filter.active {
-  background: #111111;
-  color: #ffffff;
-  border-color: #111111;
+  background: var(--frame-solid, #111111);
+  color: var(--frame-on-solid, #ffffff);
+  border-color: var(--frame-solid, #111111);
 }
 
 .taste-frame-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
+  gap: var(--frame-grid-gap, 18px);
+}
+
+.taste-frame-work-empty {
+  grid-column: 1 / -1;
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--taste-line, #e8e8e8);
+  color: color-mix(in srgb, var(--taste-ink, #111111) 56%, transparent);
+  font-size: 12px;
+  text-align: center;
 }
 
 .taste-frame-card {
@@ -732,9 +797,10 @@
 }
 
 .taste-frame-card-image {
-  aspect-ratio: 1.3 / 1;
+  aspect-ratio: var(--frame-card-aspect, 1.3 / 1);
   overflow: hidden;
-  background: #eeeeee;
+  border-radius: var(--frame-card-radius, 0);
+  background: var(--frame-media-bg, #eeeeee);
   width: 100%;
 }
 
@@ -761,15 +827,15 @@
 }
 
 .taste-frame-card-title {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--taste-display, Georgia, "Times New Roman", serif);
   font-size: 20px;
-  font-weight: 400;
-  color: #111111;
+  font-weight: var(--frame-display-weight, 400);
+  color: var(--taste-ink, #111111);
 }
 
 .taste-frame-card-type {
   font-size: 9px;
-  color: #888888;
+  color: var(--frame-faint, #888888);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding-top: 4px;
@@ -777,9 +843,9 @@
 
 /* About Section */
 .taste-frame-about {
-  border-top: 1px solid var(--taste-line, #e8e8e8);
-  border-bottom: 1px solid var(--taste-line, #e8e8e8);
-  padding: 90px 0;
+  border-top: var(--frame-rule, 1px) solid var(--taste-line, #e8e8e8);
+  border-bottom: var(--frame-rule, 1px) solid var(--taste-line, #e8e8e8);
+  padding: calc(var(--frame-section, 100px) * 0.9) 0;
 }
 
 .taste-frame-about-grid {
@@ -790,60 +856,68 @@
 
 .taste-frame-about h2 {
   margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 52px;
-  font-weight: 400;
+  font-family: var(--taste-display, Georgia, "Times New Roman", serif);
+  font-size: var(--frame-about-size, 52px);
+  font-weight: var(--frame-display-weight, 400);
   line-height: 0.95;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--frame-display-tracking, -0.04em);
 }
 
 .taste-frame-about p {
   margin: 0;
   max-width: 520px;
-  color: #666666;
+  color: var(--frame-mute, #666666);
   font-size: 14px;
   line-height: 1.8;
 }
 
 /* CTA Section */
 .taste-frame-cta {
-  padding: 110px 0;
+  padding: calc(var(--frame-section, 100px) * 1.1) 0;
   text-align: center;
 }
 
 .taste-frame-cta h2 {
   margin: 0 auto 20px;
   max-width: 800px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(50px, 7vw, 80px);
-  font-weight: 400;
+  font-family: var(--taste-display, Georgia, "Times New Roman", serif);
+  font-size: var(--frame-cta-size, clamp(50px, 7cqw, 80px));
+  font-weight: var(--frame-display-weight, 400);
   line-height: 0.9;
-  letter-spacing: -0.06em;
+  letter-spacing: var(--frame-display-tracking, -0.06em);
 }
 
 .taste-frame-accent,
 .taste-frame-cta h2 span {
   background: var(--taste-accent, #dfff45);
-  color: #111111;
+  color: var(--frame-on-accent, #111111);
   padding: 0 6px;
   display: inline-block;
 }
 
 .taste-frame-cta p {
   margin: 0 0 25px;
-  color: #777777;
+  color: var(--frame-faint, #777777);
   font-size: 13px;
   letter-spacing: 0.02em;
 }
 
-.taste-frame-cta a {
+.taste .taste-frame-cta a {
   display: inline-block;
-  background: #111111;
-  color: #ffffff;
+  background: var(--frame-solid, #111111);
+  color: var(--frame-on-solid, #ffffff);
   padding: 12px 16px;
   font-size: 11px;
   letter-spacing: 0.05em;
   transition: opacity 0.2s ease;
+  border-radius: var(--frame-button-radius, 0);
+}
+
+.taste-frame[data-button-style="outline"] .taste-frame-cta a,
+.taste-frame[data-button-style="outline"] .taste-frame-contact-btn {
+  border: 1px solid var(--taste-accent, #111111);
+  background: transparent;
+  color: var(--taste-ink, #111111);
 }
 
 .taste-frame-cta a:hover {
@@ -852,13 +926,29 @@
 
 /* Footer */
 .taste-frame-footer {
-  border-top: 1px solid var(--taste-line, #e8e8e8);
+  border-top: var(--frame-rule, 1px) solid var(--taste-line, #e8e8e8);
   padding: 20px 0;
   display: flex;
   justify-content: space-between;
-  color: #888888;
+  color: var(--frame-faint, #888888);
   font-size: 10px;
   letter-spacing: 0.05em;
+}
+
+.taste-frame-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  text-transform: uppercase;
+}
+
+.taste-frame-footer-links a {
+  color: var(--frame-faint, #888888);
+  transition: color 0.15s ease;
+}
+
+.taste-frame-footer-links a:hover {
+  color: var(--taste-ink, #111111);
 }
 
 /* Modal Lightbox */
@@ -877,8 +967,9 @@
 
 .taste-frame-modal-box {
   width: min(900px, 100%);
-  background: #ffffff;
-  color: #111111;
+  background: var(--frame-panel, #ffffff);
+  color: var(--taste-ink, #111111);
+  border-radius: var(--frame-card-radius, 0);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
   position: relative;
   overflow: hidden;
@@ -886,7 +977,7 @@
 
 .taste-frame-modal-image {
   height: min(65vh, 560px);
-  background: #111111;
+  background: var(--frame-media-bg, #111111);
   overflow: hidden;
 }
 
@@ -902,16 +993,16 @@
 }
 
 .taste-frame-modal-info h3 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--taste-display, Georgia, "Times New Roman", serif);
   font-size: 28px;
-  font-weight: 400;
+  font-weight: var(--frame-display-weight, 400);
   margin: 0 0 5px;
-  color: #111111;
+  color: var(--taste-ink, #111111);
 }
 
 .taste-frame-modal-info p {
   margin: 0;
-  color: #777777;
+  color: var(--frame-faint, #777777);
   font-size: 12px;
   letter-spacing: 0.02em;
 }
@@ -923,8 +1014,8 @@
   border: 0;
   width: 36px;
   height: 36px;
-  background: #ffffff;
-  color: #111111;
+  background: var(--frame-panel, #ffffff);
+  color: var(--taste-ink, #111111);
   font-size: 20px;
   cursor: pointer;
   display: flex;
@@ -947,7 +1038,7 @@
   }
 }
 
-@media (max-width: 700px) {
+@container (max-width: 700px) {
   .taste-frame-container {
     width: calc(100% - 28px);
   }
@@ -958,7 +1049,7 @@
     padding: 70px 0 45px;
   }
   .taste-frame-hero h1 {
-    font-size: 55px;
+    font-size: var(--frame-hero-size-sm, 55px);
   }
   .taste-frame-featured {
     aspect-ratio: 1 / 1;
@@ -973,7 +1064,7 @@
   .taste-frame-work,
   .taste-frame-about,
   .taste-frame-cta {
-    padding: 70px 0;
+    padding: calc(var(--frame-section, 100px) * 0.7) 0;
   }
   .taste-frame-section-title {
     font-size: 40px;
@@ -982,4 +1073,149 @@
     flex-direction: column;
     gap: 8px;
   }
+}
+
+/* ==========================================================================
+   Frame Variants
+   Five recasts of one structure. Each restates the four base roles plus the
+   density and type tokens above; nothing here changes the markup, so the
+   onboarding content model is identical for every variant. Token-only by
+   design, so the responsive block above still wins on layout.
+   ========================================================================== */
+
+/* Press — broadsheet. High-contrast Didone at scale, 2px rules, portrait
+   plates, wider measure than Frame so the grid reads as a spread. */
+.taste-frame[data-variant="press"] {
+  --frame-hero-size-sm: 56px;
+  --taste-paper: #f7f4ee;
+  --taste-ink: #14110f;
+  --taste-accent: #8c2f2f;
+  --taste-mark: #8c2f2f;
+  --taste-line: #d9d1c3;
+  --taste-display: var(--font-folio), "Bodoni MT", Didot, Georgia, serif;
+  --taste-body: var(--font-flood), ui-sans-serif, system-ui, sans-serif;
+  --frame-on-accent: #f7f4ee;
+  --frame-measure: 1180px;
+  --frame-section: 120px;
+  --frame-rule: 2px;
+  --frame-grid-gap: 26px;
+  --frame-card-aspect: 4 / 5;
+  --frame-hero-size: clamp(56px, 8.4cqw, 108px);
+  --frame-hero-tracking: -0.035em;
+  --frame-display-tracking: -0.02em;
+  --frame-section-title-size: 56px;
+  --frame-about-size: 56px;
+  --frame-cta-size: clamp(48px, 7cqw, 86px);
+}
+
+.taste-frame[data-variant="press"] .taste-frame-card-info {
+  border-top: 2px solid var(--taste-ink);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.taste-frame[data-variant="press"] .taste-frame-section-title {
+  border-bottom: 2px solid var(--taste-ink);
+  padding-bottom: 14px;
+}
+
+/* Void — screening room. Dark is chosen from the use scene: moving-image work
+   reads against near-black, not white. Separation by air, not rules. */
+.taste-frame[data-variant="void"] {
+  --frame-hero-size-sm: 50px;
+  --taste-paper: #0e0e10;
+  --taste-ink: #f2efe9;
+  --taste-accent: #e8c97a;
+  --taste-mark: #e8c97a;
+  --taste-line: #26262b;
+  --taste-display: var(--font-walk), "Palatino Linotype", Palatino, serif;
+  --taste-body: var(--font-taste-body), ui-sans-serif, system-ui, sans-serif;
+  --frame-on-accent: #14110f;
+  --frame-media-bg: #17171b;
+  --frame-panel: #17171a;
+  --frame-measure: 1080px;
+  --frame-section: 112px;
+  --frame-grid-gap: 20px;
+  --frame-card-radius: 2px;
+  --frame-card-aspect: 16 / 10;
+  --frame-featured-aspect: 21 / 9;
+  --frame-hero-size: clamp(54px, 7.8cqw, 100px);
+  --frame-hero-tracking: -0.045em;
+  --frame-display-tracking: -0.04em;
+}
+
+.taste-frame[data-variant="void"] .taste-frame-nav {
+  border-bottom-color: transparent;
+}
+
+/* Studio — modernist. The one sans display in the set, panelled work cards,
+   soft corners, pill actions. */
+.taste-frame[data-variant="studio"] {
+  --frame-hero-size-sm: 44px;
+  --taste-paper: #f4f4f2;
+  --taste-ink: #1b1b19;
+  --taste-accent: #b6512f;
+  --taste-mark: #b6512f;
+  --taste-line: #dedcd6;
+  --taste-display: var(--font-flood), ui-sans-serif, system-ui, sans-serif;
+  --taste-body: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --frame-on-accent: #ffffff;
+  --frame-panel: #ffffff;
+  --frame-measure: 1140px;
+  --frame-section: 96px;
+  --frame-grid-gap: 22px;
+  --frame-card-radius: 12px;
+  --frame-card-aspect: 4 / 3;
+  --frame-display-weight: 600;
+  --frame-hero-size: clamp(48px, 6.8cqw, 84px);
+  --frame-hero-leading: 0.95;
+  --frame-hero-tracking: -0.035em;
+  --frame-display-tracking: -0.03em;
+  --frame-section-title-size: 42px;
+  --frame-about-size: 44px;
+  --frame-cta-size: clamp(42px, 6cqw, 68px);
+}
+
+.taste-frame[data-variant="studio"] .taste-frame-card-info {
+  background: var(--frame-panel);
+  border: 1px solid var(--taste-line);
+  border-radius: 0 0 12px 12px;
+  margin-top: -12px;
+  padding: 16px 16px 14px;
+}
+
+.taste-frame[data-variant="studio"] .taste-frame-card-image {
+  border-radius: 12px 12px 0 0;
+}
+
+/* Column — reading first. Narrow measure, generous air, no card chrome, and a
+   cream highlight instead of a colour accent. */
+.taste-frame[data-variant="column"] {
+  --frame-hero-size-sm: 34px;
+  --taste-paper: #ffffff;
+  --taste-ink: #16150f;
+  --taste-accent: #ece7d9;
+  --taste-mark: #16150f;
+  --taste-line: #e6e3db;
+  --taste-display: var(--font-aperture), "Iowan Old Style", Georgia, serif;
+  --taste-body: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --frame-on-accent: #16150f;
+  --frame-measure: 880px;
+  --frame-section: 128px;
+  --frame-grid-gap: 34px;
+  --frame-card-aspect: 3 / 2;
+  --frame-featured-aspect: 3 / 2;
+  --frame-hero-size: clamp(38px, 4.8cqw, 60px);
+  --frame-hero-leading: 1.08;
+  --frame-hero-tracking: -0.015em;
+  --frame-display-tracking: -0.01em;
+  --frame-section-title-size: 32px;
+  --frame-about-size: 34px;
+  --frame-cta-size: clamp(32px, 4.4cqw, 50px);
+}
+
+.taste-frame[data-variant="column"] .taste-frame-hero p,
+.taste-frame[data-variant="column"] .taste-frame-about p {
+  font-size: 16px;
+  line-height: 1.75;
 }

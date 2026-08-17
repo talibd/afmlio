@@ -30,7 +30,15 @@ pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local dev uploads (STORAGE_DRIVER=local)
+/public/uploads/
+
+# generated analysis + local logs
+/graphify-out/
+build_debug.log

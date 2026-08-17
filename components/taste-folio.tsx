@@ -1,9 +1,11 @@
 "use client"
 
 import * as React from "react"
+import { X } from "lucide-react"
 
 import { type ElementKind, type Portfolio } from "@/lib/demo"
 import { blocksOf, defaultBlocks, layoutOf } from "@/lib/blocks"
+import { frameVariant } from "@/lib/frame-variants"
 import { imageStyleVars, styleClass, styleOf, styleVars } from "@/lib/elements"
 import {
   PROJECT_SRC,
@@ -61,62 +63,50 @@ function blockHitHelper(
 
 function extractFramePieces(portfolio: Portfolio): {
   pieces: StudentPiece[]
-  featured: StudentPiece
+  featured?: StudentPiece
 } {
   const list: StudentPiece[] = []
   const seen = new Set<string>()
 
-  // 1. Stills from media
-  if (portfolio.media?.stills?.length) {
-    portfolio.media.stills.forEach((src, idx) => {
-      if (!src || seen.has(src)) return
-      seen.add(src)
-      list.push({
-        src,
-        title: idx === 0 ? portfolio.project.name : `Work 0${idx + 1}`,
-        slug: idx === 0 ? "Featured" : "Project",
-        note: idx === 0 ? portfolio.project.copy : "Studio portfolio project",
-        category: idx % 3 === 0 ? "film" : idx % 3 === 1 ? "ad" : "graphic",
-      })
-    })
-  }
-
-  // 2. Images from blocks
+  // Blocks preserve the title, description, category, media kind, and order
+  // entered by the student. Read them before the legacy media arrays.
   for (const block of portfolio.blocks ?? []) {
     if (!block.image || seen.has(block.image)) continue
-    if (
-      block.type !== "featured" &&
-      block.type !== "still" &&
-      block.type !== "hero"
-    )
-      continue
+    // The hero block is excluded: it carries the headline and a copy of the
+    // featured image, so treating it as a piece retitles the first work card
+    // with the headline and dedupe-shadows the real featured block.
+    if (block.type !== "featured" && block.type !== "still") continue
     seen.add(block.image)
+    const category = block.eyebrow?.trim().toLowerCase() || "work"
     list.push({
       src: block.image,
       title: block.heading || portfolio.project.name,
       slug: block.body || block.eyebrow || "Featured piece",
       note: block.body || portfolio.project.copy,
       mediaKind: block.mediaKind,
-      category:
-        block.eyebrow?.toLowerCase() === "film" ||
-        block.eyebrow?.toLowerCase() === "ad" ||
-        block.eyebrow?.toLowerCase() === "graphic"
-          ? block.eyebrow.toLowerCase()
-          : block.type === "still"
-            ? "graphic"
-            : block.type === "featured"
-              ? "film"
-              : "ad",
+      category,
     })
   }
 
-  // 3. Fallback to STUDENT_WORK
-  if (list.length === 0) {
-    list.push(...STUDENT_WORK)
+  // Older drafts only stored flat image/video arrays. Keep them renderable
+  // without allowing them to override richer block metadata.
+  const legacyMedia = [
+    ...(portfolio.media?.stills ?? []).map((src) => ({ src, mediaKind: "image" as const })),
+    ...(portfolio.media?.clips ?? []).map((src) => ({ src, mediaKind: "video" as const })),
+  ]
+  for (const [idx, media] of legacyMedia.entries()) {
+    if (!media.src || seen.has(media.src)) continue
+    seen.add(media.src)
+    list.push({
+      ...media,
+      title: idx === 0 ? portfolio.project.name : `Work ${String(idx + 1).padStart(2, "0")}`,
+      slug: idx === 0 ? portfolio.project.copy || "Featured piece" : "Portfolio project",
+      note: idx === 0 ? portfolio.project.copy : "Portfolio project",
+      category: media.mediaKind === "video" ? "film" : "work",
+    })
   }
 
-  const featured = list[0] ?? STUDENT_WORK[0]
-  return { pieces: list, featured }
+  return { pieces: list, featured: list[0] }
 }
 
 function FrameFolio({
@@ -137,6 +127,33 @@ function FrameFolio({
   const [filter, setFilter] = React.useState("all")
   const [modalPiece, setModalPiece] = React.useState<StudentPiece | null>(null)
   const isEditing = Boolean(onSelectBlock || onSelectElement)
+  const customization = portfolio.customization
+  const customChrome = portfolio.chrome as (Portfolio["chrome"] & {
+    logoMode?: "wordmark" | "mark" | "both"
+    wordmark?: string
+    logoUrl?: string
+    showWorkNav?: boolean
+    showAboutNav?: boolean
+    showContactNav?: boolean
+  }) | undefined
+  const displayFont =
+    customization?.fontPairing === "modern"
+      ? "Inter, ui-sans-serif, system-ui, sans-serif"
+      : customization?.fontPairing === "gallery"
+        ? '"Instrument Serif", Georgia, serif'
+        : 'Georgia, "Times New Roman", serif'
+  const variant = frameVariant(customization?.frameVariant)
+  const buttonStyle = customization?.buttonStyle ?? variant.buttonStyle
+  const frameStyle = {
+    "--taste-paper": customization?.backgroundColor ?? variant.backgroundColor,
+    "--taste-ink": customization?.textColor ?? variant.textColor,
+    "--taste-accent": customization?.accentColor ?? variant.accentColor,
+    "--taste-mark": customization?.accentColor ?? variant.accentColor,
+    // A variant owns its own typography through the stylesheet. Only portfolios
+    // made before variants existed fall back to the fontPairing enum.
+    ...(customization?.frameVariant ? {} : { "--taste-display": displayFont }),
+    "--frame-button-radius": buttonStyle === "pill" ? "999px" : buttonStyle === "square" ? "0px" : "8px",
+  } as React.CSSProperties
 
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -159,6 +176,7 @@ function FrameFolio({
 
   const heroBlock = visibleBlocks.find((b) => b.type === "hero") ?? rawBlocks[0]
   const aboutBlock = visibleBlocks.find((b) => b.type === "about")
+  const footerBlock = visibleBlocks.find((b) => b.type === "footer")
   const contactBlock = visibleBlocks.find(
     (b) => b.type === "contact" || b.type === "cta"
   )
@@ -287,6 +305,11 @@ function FrameFolio({
     : null
 
   const heroHeading = heroBlock?.heading || "AI made visual."
+  const heroLines = heroHeading.includes("\n")
+    ? heroHeading.split("\n").map((line) => line.trim())
+    : heroHeading.includes("/")
+      ? heroHeading.split("/").map((line) => line.trim())
+      : null
   const heroBody =
     heroBlock?.body ||
     portfolio.bio ||
@@ -294,21 +317,29 @@ function FrameFolio({
   const email = portfolio.settings?.email || "hello@framestudio.ai"
   const emailHref = `mailto:${email}`
 
+  // The featured banner already presents pieces[0]; repeating it as the first
+  // grid card reads as a duplicate. A single-piece portfolio keeps it in both
+  // places, since the grid (and its anchor target) would otherwise sit empty.
+  const gridPieces = React.useMemo(
+    () => (pieces.length > 1 ? pieces.slice(1) : pieces),
+    [pieces]
+  )
+
   const categories = React.useMemo(() => {
     const cats = new Set<string>()
-    for (const p of pieces) {
+    for (const p of gridPieces) {
       if (p.category) cats.add(p.category)
     }
     return Array.from(cats)
-  }, [pieces])
+  }, [gridPieces])
 
   const filteredPieces = React.useMemo(() => {
-    if (filter === "all") return pieces
-    return pieces.filter((p) => p.category === filter)
-  }, [pieces, filter])
+    if (filter === "all") return gridPieces
+    return gridPieces.filter((p) => p.category === filter)
+  }, [gridPieces, filter])
 
   return (
-    <div className={cn("taste taste-frame", className)} data-taste="frame">
+    <div className={cn("taste taste-frame", className)} data-taste="frame" data-variant={variant.id} data-button-style={buttonStyle} style={frameStyle}>
       <div className="taste-frame-container">
         {/* Navigation */}
         <nav className="taste-frame-nav">
@@ -317,11 +348,17 @@ function FrameFolio({
             href="#top"
             onClick={heroBadgeHit.onClick}
           >
-            {portfolio.school || portfolio.name || "FRAME"}
+            {customChrome?.logoMode !== "wordmark" && customChrome?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- user-owned R2 logo is a runtime URL.
+              <img src={customChrome.logoUrl} alt="" className="taste-frame-logo-mark" />
+            ) : null}
+            {customChrome?.logoMode !== "mark"
+              ? customChrome?.wordmark || portfolio.school || portfolio.name || "FRAME"
+              : null}
           </a>
           <div className="taste-frame-links">
-            <a href="#work">Work</a>
-            <a href="#about">About</a>
+            {customChrome?.showWorkNav !== false ? <a href="#work">Work</a> : null}
+            {customChrome?.showAboutNav !== false ? <a href="#about">About</a> : null}
             {customBlocks.some((b) => b.type === "skills") ? (
               <a href="#skills">Skills</a>
             ) : null}
@@ -329,7 +366,7 @@ function FrameFolio({
               <a href="#faq">FAQ</a>
             ) : null}
           </div>
-          <a
+          {customChrome?.showContactNav !== false ? <a
             className={cn(
               "taste-frame-contact-btn",
               contactButtonHit?.className
@@ -338,7 +375,7 @@ function FrameFolio({
             onClick={contactButtonHit?.onClick}
           >
             Contact
-          </a>
+          </a> : <span />}
         </nav>
 
         {/* Hero Section */}
@@ -366,23 +403,17 @@ function FrameFolio({
               style={heroHeadingStyle ? styleVars(heroHeadingStyle) : undefined}
               onClick={heroHeadingHit.onClick}
             >
-              {heroHeading.includes("\n") ? (
+              {heroLines?.length ? (
                 <>
-                  {heroHeading.split("\n")[0]}
+                  {heroLines[0]}
                   <br />
-                  <span>{heroHeading.split("\n")[1]}</span>
-                </>
-              ) : heroHeading.includes(" / ") ? (
-                <>
-                  {heroHeading.split(" / ")[0]}
-                  <br />
-                  <span>{heroHeading.split(" / ")[1]}</span>
+                  <span>{heroLines.slice(1).join(" / ")}</span>
                 </>
               ) : (
                 <>
                   {heroHeading}
                   <br />
-                  <span>{portfolio.title || "Human made creative."}</span>
+                  <span>Human made creative.</span>
                 </>
               )}
             </h1>
@@ -411,15 +442,28 @@ function FrameFolio({
 
             <div
               className={cn("taste-frame-featured", featuredImageHit.className)}
+              role={featured ? "button" : undefined}
+              tabIndex={featured ? 0 : undefined}
+              aria-label={featured ? `Open ${featured.title}` : undefined}
               onClick={(e) => {
                 if (isEditing && featuredImageHit.onClick) {
                   featuredImageHit.onClick(e)
-                } else {
+                } else if (featured) {
+                  setModalPiece(featured)
+                }
+              }}
+              onKeyDown={(e) => {
+                if (featured && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault()
                   setModalPiece(featured)
                 }
               }}
             >
-              {featured.mediaKind === "video" ? (
+              {!featured ? (
+                <div className="taste-frame-media-empty" role="status">
+                  <span>Your featured project will appear here.</span>
+                </div>
+              ) : featured.mediaKind === "video" ? (
                 <video
                   src={featured.src}
                   aria-label={featured.title}
@@ -440,19 +484,21 @@ function FrameFolio({
                   }
                 />
               )}
-              <div className="taste-frame-featured-overlay">
-                <div>
-                  <div className="taste-frame-featured-title">
-                    {featured.title}
+              {featured ? (
+                <div className="taste-frame-featured-overlay">
+                  <div>
+                    <div className="taste-frame-featured-title">
+                      {featured.title}
+                    </div>
+                    <div className="taste-frame-featured-meta">
+                      {featured.slug || "FEATURED PIECE"}
+                    </div>
                   </div>
                   <div className="taste-frame-featured-meta">
-                    {featured.slug || "FEATURED PIECE"}
+                    01 / {String(pieces.length).padStart(2, "0")}
                   </div>
                 </div>
-                <div className="taste-frame-featured-meta">
-                  01 / {String(pieces.length).padStart(2, "0")}
-                </div>
-              </div>
+              ) : null}
             </div>
           </section>
         ) : null}
@@ -487,11 +533,20 @@ function FrameFolio({
           </div>
 
           <div className="taste-frame-grid">
-            {filteredPieces.map((piece, idx) => (
+            {filteredPieces.length ? filteredPieces.map((piece, idx) => (
               <article
                 key={idx}
                 className="taste-frame-card"
+                role="button"
+                tabIndex={0}
+                aria-label={`Open ${piece.title}`}
                 onClick={() => setModalPiece(piece)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    setModalPiece(piece)
+                  }
+                }}
               >
                 <div className="taste-frame-card-image">
                   {piece.mediaKind === "video" ? (
@@ -520,7 +575,11 @@ function FrameFolio({
                   </div>
                 </div>
               </article>
-            ))}
+            )) : (
+              <div className="taste-frame-work-empty">
+                Add a project to begin your selected work.
+              </div>
+            )}
           </div>
         </section>
 
@@ -553,13 +612,6 @@ function FrameFolio({
             selectedKind,
             onSelectElement
           )
-          const buttonHit = hitHelper(
-            block.id,
-            "button",
-            selectedId,
-            selectedKind,
-            onSelectElement
-          )
           const imageHit = hitHelper(
             block.id,
             "image",
@@ -570,7 +622,6 @@ function FrameFolio({
 
           const headingStyle = styleOf(block, "heading")
           const bodyStyle = styleOf(block, "text")
-          const buttonStyle = styleOf(block, "button")
           const imageStyle = styleOf(block, "image")
           const layout = layoutOf(block)
 
@@ -1028,12 +1079,27 @@ function FrameFolio({
         {/* Footer */}
         <footer className="taste-frame-footer">
           <span>
-            © {new Date().getFullYear()} {portfolio.name || "FRAME"}
+            {footerBlock?.heading ||
+              `© ${new Date().getFullYear()} ${portfolio.name || "FRAME"}`}
           </span>
+          {footerBlock?.items?.length ? (
+            <nav className="taste-frame-footer-links" aria-label="Social links">
+              {footerBlock.items.map((item) => {
+                const [label, href] = item.split("|")
+                if (!href) return null
+                return (
+                  <a key={item} href={href} target="_blank" rel="noopener noreferrer">
+                    {label}
+                  </a>
+                )
+              })}
+            </nav>
+          ) : null}
           <span>
-            {portfolio.skills?.length
-              ? portfolio.skills.join(" · ").toUpperCase()
-              : "AI FILMS · ADS · GRAPHICS"}
+            {footerBlock?.body ||
+              (portfolio.skills?.length
+                ? portfolio.skills.join(" · ").toUpperCase()
+                : "AI FILMS · ADS · GRAPHICS")}
           </span>
         </footer>
       </div>
@@ -1042,6 +1108,9 @@ function FrameFolio({
       {modalPiece ? (
         <div
           className="taste-frame-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="frame-modal-title"
           onClick={(e) => {
             if (e.target === e.currentTarget) setModalPiece(null)
           }}
@@ -1053,7 +1122,7 @@ function FrameFolio({
               aria-label="Close modal"
               onClick={() => setModalPiece(null)}
             >
-              ×
+              <X aria-hidden="true" size={18} />
             </button>
             <div className="taste-frame-modal-image">
               {modalPiece.mediaKind === "video" ? (
@@ -1070,7 +1139,7 @@ function FrameFolio({
               )}
             </div>
             <div className="taste-frame-modal-info">
-              <h3>{modalPiece.title}</h3>
+              <h3 id="frame-modal-title">{modalPiece.title}</h3>
               <p>{modalPiece.note}</p>
             </div>
           </div>
@@ -1098,6 +1167,18 @@ export function TasteFolio({
   onSelectElement?: (id: string, kind: ElementKind) => void
   onBlockKeySelect?: (id: string) => void
 }) {
+  const isEditing = Boolean(onSelectBlock || onSelectElement)
+  const rawBlocks = portfolio.blocks?.length
+    ? portfolio.blocks
+    : blocksOf(portfolio, template)
+
+  const activeBlocks = React.useMemo(() => {
+    const visible = rawBlocks.filter((b) => !b.hidden)
+    if (visible.length > 0) return visible
+    if (isEditing) return rawBlocks
+    return defaultBlocks(portfolio, template)
+  }, [rawBlocks, isEditing, portfolio, template])
+
   if (template === "frame") {
     return (
       <FrameFolio
@@ -1110,18 +1191,6 @@ export function TasteFolio({
       />
     )
   }
-
-  const isEditing = Boolean(onSelectBlock || onSelectElement)
-  const rawBlocks = portfolio.blocks?.length
-    ? portfolio.blocks
-    : blocksOf(portfolio, template)
-
-  const activeBlocks = React.useMemo(() => {
-    const visible = rawBlocks.filter((b) => !b.hidden)
-    if (visible.length > 0) return visible
-    if (isEditing) return rawBlocks
-    return defaultBlocks(portfolio, template)
-  }, [rawBlocks, isEditing, portfolio, template])
 
   const firstBlock = activeBlocks[0] ?? defaultBlocks(portfolio, template)[0]
   const suiteBlocks = activeBlocks.slice(1)

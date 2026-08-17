@@ -1,11 +1,10 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 
-import { FrameOnboarding } from "@/components/frame-onboarding"
-
-import "@/app/dashboard/dashboard.css"
-
-export const metadata: Metadata = { title: "Create your portfolio — AFM" }
+export const metadata: Metadata = {
+  title: "Create your studio portfolio — AFM",
+}
 
 export default function OnboardingPage() {
-  return <FrameOnboarding />
+  redirect("/onboarding/1")
 }

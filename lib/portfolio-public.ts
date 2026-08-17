@@ -1,35 +1,31 @@
+import "server-only"
+
+import { and, eq } from "drizzle-orm"
 import type { Metadata } from "next"
-import { cookies } from "next/headers"
 
-import { getPortfolio, type Portfolio } from "@/lib/demo"
-import type { PortfolioSeo } from "@/lib/portfolio-store"
+import { portfolios } from "@/db/schema"
+import type { Portfolio } from "@/lib/demo"
+import { db } from "@/lib/server/db"
 
-const SEO_COOKIE = (slug: string) => `afm_seo_${slug}`
-
-export async function getPublishedSeo(slug: string): Promise<PortfolioSeo | null> {
-  try {
-    const jar = await cookies()
-    const raw = jar.get(SEO_COOKIE(slug))?.value
-    if (!raw) return null
-    return JSON.parse(decodeURIComponent(raw)) as PortfolioSeo
-  } catch {
-    return null
-  }
+export async function getPublishedPortfolio(slug: string): Promise<Portfolio | null> {
+  const [record] = await db
+    .select({ snapshot: portfolios.publishedSnapshot })
+    .from(portfolios)
+    .where(and(eq(portfolios.slug, slug), eq(portfolios.status, "published")))
+    .limit(1)
+  return record?.snapshot ? record.snapshot as unknown as Portfolio : null
 }
 
 export async function buildPublicMetadata(slug: string): Promise<Metadata> {
-  const demo = getPortfolio(slug)
-  const seo = await getPublishedSeo(slug)
-  const title = seo?.title ?? `${demo.name} — AFM Student`
-  const description = seo?.description ?? demo.bio
-  const indexable = seo?.indexable ?? true
+  const portfolio = await getPublishedPortfolio(slug)
+  if (!portfolio) return { title: "Portfolio not found — AFM", robots: { index: false, follow: false } }
+  const title = portfolio.seo?.title || `${portfolio.name} — Portfolio`
+  const description = portfolio.seo?.description || portfolio.bio
+  const indexable = portfolio.seo?.indexable ?? true
   return {
     title,
     description,
     robots: indexable ? { index: true, follow: true } : { index: false, follow: false },
+    openGraph: { title, description, type: "website" },
   }
-}
-
-export function demoPortfolio(slug: string): Portfolio {
-  return getPortfolio(slug)
 }

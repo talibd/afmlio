@@ -5,6 +5,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  ChevronLeft,
   ChevronUp,
   Copy,
   Eye,
@@ -981,6 +982,24 @@ export function BlockSidebar({
   const activeBlock =
     blocks.find((block) => block.id === selectedId) ?? blocks[0]
 
+  /* One zone at a time: the rail shows either the outline or one section's
+     form at full height, instead of two cramped stacked scrollers. A selection
+     change opens the form only when the blocks themselves did not change in
+     the same render — structural swaps (initial data load, add, delete) move
+     the selection programmatically and must not yank the view around. */
+  const [view, setView] = React.useState<"outline" | "editing">("outline")
+  const blockIdsKey = blocks.map((b) => b.id).join("|")
+  const lastSelected = React.useRef(selectedId)
+  const lastIds = React.useRef(blockIdsKey)
+  React.useEffect(() => {
+    const idsChanged = blockIdsKey !== lastIds.current
+    lastIds.current = blockIdsKey
+    if (selectedId !== lastSelected.current) {
+      lastSelected.current = selectedId
+      if (!idsChanged) setView("editing")
+    }
+  }, [selectedId, blockIdsKey])
+
   function move(id: string, dir: -1 | 1) {
     const index = blocks.findIndex((block) => block.id === id)
     if (index === -1) return
@@ -1004,6 +1023,7 @@ export function BlockSidebar({
     next.splice(index + 1, 0, copy)
     onBlocks(next)
     onSelect(copy.id)
+    setView("editing")
   }
 
   function remove(id: string) {
@@ -1034,21 +1054,54 @@ export function BlockSidebar({
     onBlocks(blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)))
   }
 
+  if (view === "editing" && activeBlock) {
+    return (
+      <div className="flex h-full min-h-0 min-w-0 flex-col pb-3">
+        <section
+          className="flex min-h-0 flex-1 flex-col"
+          aria-labelledby="block-inspector-heading"
+        >
+          <div className="mb-3 flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setView("outline")}
+              aria-label="Back to sections"
+              className={actionClass}
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+            <h2
+              id="block-inspector-heading"
+              className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight"
+            >
+              {blockLabel(activeBlock.type)}
+            </h2>
+          </div>
+          <div className="afm-editor-scroll min-h-0 flex-1 overflow-y-auto pr-2">
+            <BlockForm
+              block={activeBlock}
+              onChange={(patch) => updateBlock(activeBlock.id, patch)}
+            />
+          </div>
+        </section>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col pb-3">
-      <section className="shrink-0" aria-labelledby="page-outline-heading">
-        <div className="mb-2 flex items-center justify-between">
-          <div>
-            <p
-              id="page-outline-heading"
-              className="text-xsm font-medium text-(--sidebar-muted)"
-            >
-              Page outline
-            </p>
-            <p className="text-xxs mt-0.5 text-muted-foreground">
-              {blocks.length} {blocks.length === 1 ? "section" : "sections"}
-            </p>
-          </div>
+      <section
+        className="flex min-h-0 flex-1 flex-col"
+        aria-labelledby="page-outline-heading"
+      >
+        <div className="mb-2 flex shrink-0 items-center justify-between">
+          <p
+            id="page-outline-heading"
+            className="text-xsm font-medium text-(--sidebar-muted)"
+          >
+            Sections
+            <span className="text-muted-foreground"> · {blocks.length}</span>
+          </p>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -1079,6 +1132,7 @@ export function BlockSidebar({
                       )
                       onBlocks([...blocks, fresh])
                       onSelect(fresh.id)
+                      setView("editing")
                     }}
                   >
                     {item.label}
@@ -1101,6 +1155,7 @@ export function BlockSidebar({
                       )
                       onBlocks([...blocks, fresh])
                       onSelect(fresh.id)
+                      setView("editing")
                     }}
                   >
                     {item.label}
@@ -1110,7 +1165,12 @@ export function BlockSidebar({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className="afm-editor-scroll flex max-h-52 flex-col gap-1 overflow-y-auto pr-1">
+        <div className="afm-editor-scroll flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1">
+          {blocks.length === 0 ? (
+            <p className="px-2 pt-2 text-sm text-muted-foreground">
+              Add a section to start editing this page.
+            </p>
+          ) : null}
           {blocks.map((block, index) => {
             const selected = block.id === selectedId
             return (
@@ -1125,7 +1185,12 @@ export function BlockSidebar({
               >
                 <button
                   type="button"
-                  onClick={() => onSelect(block.id)}
+                  onClick={() => {
+                    onSelect(block.id)
+                    // Explicit: re-clicking the already-selected row must
+                    // still open its form (the effect only sees changes).
+                    setView("editing")
+                  }}
                   className="flex h-full min-w-0 flex-1 items-center rounded-md px-2 text-left text-sm tracking-tight focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                 >
                   <span
@@ -1200,35 +1265,6 @@ export function BlockSidebar({
               </div>
             )
           })}
-        </div>
-      </section>
-
-      <section
-        className="mt-4 flex min-h-0 flex-1 flex-col border-t border-sidebar-border pt-4"
-        aria-labelledby="block-inspector-heading"
-      >
-        <div className="mb-3 shrink-0 px-1">
-          <p className="text-xxs font-medium tracking-[0.14em] text-muted-foreground uppercase">
-            Editing
-          </p>
-          <h2
-            id="block-inspector-heading"
-            className="mt-1 text-sm font-semibold tracking-tight"
-          >
-            {activeBlock ? blockLabel(activeBlock.type) : "No section selected"}
-          </h2>
-        </div>
-        <div className="afm-editor-scroll min-h-0 flex-1 overflow-y-auto pr-2">
-          {activeBlock ? (
-            <BlockForm
-              block={activeBlock}
-              onChange={(patch) => updateBlock(activeBlock.id, patch)}
-            />
-          ) : (
-            <p className="px-1 text-sm text-muted-foreground">
-              Add a section to start editing this page.
-            </p>
-          )}
         </div>
       </section>
     </div>

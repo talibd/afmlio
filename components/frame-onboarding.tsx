@@ -1,766 +1,351 @@
 "use client"
-
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, ArrowRight, Clapperboard, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ExternalLink, Loader2, Plus, Trash2, Upload } from "lucide-react"
+import { toast } from "sonner"
 
-import { FolioCanvas } from "@/components/folio-view"
-import { Button } from "@/components/ui/button"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { TasteFolio } from "@/components/taste-folio"
 import { createBlock } from "@/lib/blocks"
-import { PROJECT_SRC, type FolioBlock } from "@/lib/demo"
-import { STUDENT_WORK } from "@/lib/tastes"
-import {
-  defaultSeo,
-  getBaseDraft,
-  saveDraft,
-  uniquePortfolioSlug,
-  type StoredPortfolio,
-} from "@/lib/portfolio-store"
-import { cn } from "@/lib/utils"
+import type { Portfolio } from "@/lib/demo"
+import { FRAME_VARIANTS, type FrameVariantId, frameVariant } from "@/lib/frame-variants"
+import { defaultChrome, defaultMedia, defaultSettings } from "@/lib/portfolio-store"
 
-const ONBOARDING_KEY = "afm:onboarding:frame"
-const MAX_IMAGE_BYTES = 1_500_000
-const MAX_VIDEO_BYTES = 3_000_000
-
-type ProjectCategory = "film" | "ad" | "graphic"
-
-type ProjectInput = {
-  id: string
-  title: string
-  category: ProjectCategory
-  detail: string
-  image: string
-  mediaKind: "image" | "video"
+type Step = 1 | 2 | 3 | 4
+type Asset = { id?: string; key?: string; url: string; type: "image" | "video"; fileName?: string }
+type Project = { id: string; title: string; category: string; description: string; media: Asset | null }
+export type FrameOnboardingState = {
+  identity: { displayName: string; headline: string; intro: string; email: string }
+  /** Page copy the template otherwise hardcodes. All optional — every field
+   *  falls back to the template's own line. */
+  copy: { heroCta: string; aboutHeading: string; aboutBody: string; contactHeading: string; footerNote: string }
+  /** Handles or full URLs; empty platforms never render. Normalized to
+   *  absolute links only when the draft is built. */
+  socials: { instagram: string; whatsapp: string; youtube: string; vimeo: string; tiktok: string; linkedin: string }
+  branding: {
+    logoMode: "wordmark" | "mark" | "both"; wordmark: string; logo: Asset | null
+    frameVariant: FrameVariantId
+    accentColor: string; backgroundColor: string; textColor: string
+    fontPairing: "editorial" | "modern" | "gallery"; buttonStyle: "pill" | "square" | "outline"
+  }
+  projects: Project[]
+  presentation: {
+    showWorkNav: boolean; showAboutNav: boolean; showContactNav: boolean; showContactCta: boolean
+    seoTitle: string; seoDescription: string; allowIndexing: boolean
+  }
 }
 
-type FrameOnboardingState = {
-  step: 1 | 2
-  brand: string
-  heroPrimary: string
-  heroSecondary: string
-  intro: string
-  aboutHeading: string
-  aboutBody: string
-  email: string
-  projects: ProjectInput[]
+const DEFAULTS: FrameOnboardingState = {
+  identity: { displayName: "", headline: "", intro: "", email: "" },
+  copy: { heroCta: "VIEW WORK →", aboutHeading: "Less noise. / More work.", aboutBody: "", contactHeading: "Have an idea? / Let's make it.", footerNote: "" },
+  socials: { instagram: "", whatsapp: "", youtube: "", vimeo: "", tiktok: "", linkedin: "" },
+  branding: { logoMode: "wordmark", wordmark: "", logo: null, frameVariant: "frame", accentColor: "#DFFF45", backgroundColor: "#FFFFFF", textColor: "#111111", fontPairing: "editorial", buttonStyle: "square" },
+  projects: [{ id: "project-1", title: "", category: "Film", description: "", media: null }],
+  presentation: { showWorkNav: true, showAboutNav: true, showContactNav: true, showContactCta: true, seoTitle: "", seoDescription: "", allowIndexing: true },
 }
 
-const INITIAL_STATE: FrameOnboardingState = {
-  step: 1,
-  brand: "",
-  heroPrimary: "",
-  heroSecondary: "Human made creative.",
-  intro: "",
-  aboutHeading: "Less noise.\nMore work.",
-  aboutBody: "",
-  email: "",
+/* Stand-in copy and synthetic stills so a style card reads as a page before the
+   student has typed anything. Replaced field by field as they fill step 2. */
+const SEED: FrameOnboardingState = {
+  ...DEFAULTS,
+  identity: {
+    displayName: "Your studio",
+    headline: "AI made visual. / Human made creative.",
+    intro: "Two sentences about your practice, the work you take on, and who you make it with.",
+    email: "hello@example.com",
+  },
+  branding: { ...DEFAULTS.branding, wordmark: "Your studio" },
   projects: [
-    {
-      id: "project-1",
-      title: "",
-      category: "film",
-      detail: "",
-      image: "",
-      mediaKind: "image",
-    },
+    { id: "seed-1", title: "Night path", category: "Film", description: "Short film", media: { url: "/work/work-night-path.png", type: "image" } },
+    { id: "seed-2", title: "Screening", category: "Photography", description: "Series", media: { url: "/work/work-screening.png", type: "image" } },
+    { id: "seed-3", title: "Vessels", category: "Design", description: "Studies", media: { url: "/work/work-vessels.png", type: "image" } },
   ],
 }
 
-function categoryLabel(category: ProjectCategory) {
-  if (category === "film") return "Films"
-  if (category === "ad") return "Ads"
-  return "Graphics"
+/* The progress rail already names and numbers the step, so each step carries
+   only one short description — no second title, no countdown. */
+const STEPS = [
+  ["Style", "Pick how your page should feel — you can change it anytime."],
+  ["Content", "Your name, story, and the words on your page."],
+  ["Projects", "Add your work. The first project leads the page."],
+  ["Review", "Check the last details, then create your page."],
+] as const
+
+function apiErrorMessage(body: unknown, fallback: string) {
+  if (!body || typeof body !== "object" || !("error" in body)) return fallback
+  const error = (body as { error?: unknown }).error
+  if (typeof error === "string") return error
+  if (error && typeof error === "object" && "message" in error && typeof (error as { message?: unknown }).message === "string") {
+    return (error as { message: string }).message
+  }
+  return fallback
 }
 
-function buildPortfolio(
-  state: FrameOnboardingState,
-  slug: string
-): StoredPortfolio {
-  const projects = state.projects.length
-    ? state.projects
-    : INITIAL_STATE.projects
-  const first = projects[0]
-  const base = getBaseDraft(slug, "frame")
-  const categories = Array.from(
-    new Set(projects.map((project) => categoryLabel(project.category)))
-  )
-  const portfolio: StoredPortfolio = {
-    ...base,
-    slug,
-    name: state.brand.trim() || "FRAME",
-    school: state.brand.trim() || "FRAME",
-    title: state.heroSecondary.trim() || "Human made creative.",
-    bio:
-      state.intro.trim() ||
-      "A simple portfolio of films, advertisements, graphics and visual experiments.",
-    status: "draft",
+function mergeDraft(value?: Partial<FrameOnboardingState>): FrameOnboardingState {
+  if (!value) return DEFAULTS
+  return {
+    identity: { ...DEFAULTS.identity, ...value.identity }, branding: { ...DEFAULTS.branding, ...value.branding },
+    copy: { ...DEFAULTS.copy, ...value.copy }, socials: { ...DEFAULTS.socials, ...value.socials },
+    projects: value.projects?.length ? value.projects : DEFAULTS.projects,
+    presentation: { ...DEFAULTS.presentation, ...value.presentation },
+  }
+}
+
+async function uploadToR2(file: File): Promise<Asset> {
+  const response = await fetch("/api/uploads/authorize", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contentType: file.type, size: file.size }) })
+  if (!response.ok) throw new Error(apiErrorMessage(await response.json().catch(() => null), "Could not prepare the upload."))
+  const result = (await response.json()) as { key: string; uploadUrl: string; ticket: string; headers?: Record<string, string> }
+  const upload = await fetch(result.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type, ...result.headers }, body: file })
+  if (!upload.ok) throw new Error("The file could not be uploaded.")
+  const completed = await fetch("/api/uploads/complete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ticket: result.ticket }) })
+  if (!completed.ok) throw new Error(apiErrorMessage(await completed.json().catch(() => null), "The upload could not be verified."))
+  const asset = (await completed.json()) as { id: string; key: string; url: string; kind: "image" | "video" }
+  return { id: asset.id, key: asset.key, url: asset.url, type: asset.kind, fileName: file.name }
+}
+
+/** Accepts a handle, phone number, or pasted URL per platform and returns
+ *  "Label|https://…" pipe entries — the list format footer links render from. */
+function socialItems(socials: FrameOnboardingState["socials"]): string[] {
+  const url = (raw: string, build: (bare: string) => string) => {
+    const v = raw.trim()
+    if (!v) return ""
+    return /^https?:\/\//i.test(v) ? v : build(v.replace(/^@/, ""))
+  }
+  const entries: Array<[string, string]> = [
+    ["Instagram", url(socials.instagram, (h) => `https://instagram.com/${h}`)],
+    ["WhatsApp", url(socials.whatsapp, (h) => `https://wa.me/${h.replace(/[^\d]/g, "")}`)],
+    ["YouTube", url(socials.youtube, (h) => `https://youtube.com/@${h}`)],
+    ["Vimeo", url(socials.vimeo, (h) => `https://vimeo.com/${h}`)],
+    ["TikTok", url(socials.tiktok, (h) => `https://www.tiktok.com/@${h}`)],
+    ["LinkedIn", url(socials.linkedin, (h) => `https://linkedin.com/in/${h}`)],
+  ]
+  return entries.filter(([, href]) => href).map(([label, href]) => `${label}|${href}`)
+}
+
+function buildPortfolioDraft(value: FrameOnboardingState) {
+  const featured = value.projects[0]
+  const portfolio: Portfolio = {
+    slug: "pending",
     template: "frame",
-    project: {
-      name: first?.title.trim() || "Untitled project",
-      copy: first?.detail.trim() || "Selected work",
+    status: "draft",
+    name: value.identity.displayName,
+    school: value.identity.displayName,
+    title: value.identity.headline,
+    bio: value.identity.intro,
+    project: { name: featured?.title || "", copy: featured?.description || "" },
+    skills: Array.from(new Set(value.projects.map((project) => project.category))),
+  }
+  const work = value.projects.map((project) => ({
+    ...createBlock("featured", portfolio, "frame"),
+    id: `featured-${project.id}`,
+    heading: project.title,
+    eyebrow: project.category,
+    body: project.description,
+    image: project.media?.url || "",
+    mediaKind: project.media?.type || "image",
+    imageAlt: project.title,
+    hidden: false,
+  }))
+  return {
+    ...portfolio,
+    media: {
+      ...defaultMedia(),
+      headshot: "",
+      stills: value.projects.filter(project => project.media?.type === "image").map(project => project.media!.url),
+      clips: value.projects.filter(project => project.media?.type === "video").map(project => project.media!.url),
     },
-    skills: categories,
-    settings: {
-      ...base.settings,
-      email: state.email.trim() || "hello@example.com",
+    settings: { ...defaultSettings(), email: value.identity.email, showEmail: value.presentation.showContactCta },
+    seo: { title: value.presentation.seoTitle, description: value.presentation.seoDescription, indexable: value.presentation.allowIndexing },
+    chrome: {
+      ...defaultChrome(),
+      logoMode: value.branding.logoMode,
+      wordmark: value.branding.wordmark || value.identity.displayName,
+      logoUrl: value.branding.logo?.url || "",
+      showWorkNav: value.presentation.showWorkNav,
+      showAboutNav: value.presentation.showAboutNav,
+      showContactNav: value.presentation.showContactNav,
     },
+    customization: { ...value.branding, logo: value.branding.logo || null },
+    blocks: [
+      { ...createBlock("hero", portfolio, "frame"), id: "hero-introduction", heading: value.identity.headline, body: value.identity.intro, image: featured?.media?.url || "", mediaKind: featured?.media?.type || "image", cta: value.copy.heroCta.trim() || "VIEW WORK →", ctaHref: "#work", hidden: false },
+      ...work,
+      // The about heading uses the same slash-for-line-break convention as the
+      // headline field; the template renders "\n" as the break.
+      { ...createBlock("about", portfolio, "frame"), id: "about-story", heading: (value.copy.aboutHeading.trim() || "Less noise. / More work.").split("/").map((line) => line.trim()).join("\n"), body: value.copy.aboutBody.trim() || value.identity.intro, hidden: false },
+      { ...createBlock("contact", portfolio, "frame"), id: "contact-invitation", heading: (value.copy.contactHeading.trim() || "Have an idea? / Let's make it.").split("/").map((line) => line.trim()).join("\n"), body: Array.from(new Set(value.projects.map((project) => project.category))).join(" · "), cta: `${value.identity.email.toUpperCase()} ↗`, ctaHref: `mailto:${value.identity.email}`, hidden: !value.presentation.showContactCta },
+      ...((value.copy.footerNote.trim() || socialItems(value.socials).length)
+        // heading stays empty so the template's © line keeps rendering; only
+        // the note and social links are authored here.
+        ? [{ ...createBlock("footer", portfolio, "frame"), id: "footer-note", heading: "", body: value.copy.footerNote.trim(), items: socialItems(value.socials), hidden: false }]
+        : []),
+    ],
     updatedAt: Date.now(),
   }
-
-  const hero = {
-    ...createBlock("hero", portfolio, "frame"),
-    id: "hero-introduction",
-    heading: `${state.heroPrimary.trim() || "AI made visual."}\n${state.heroSecondary.trim() || "Human made creative."}`,
-    body: portfolio.bio,
-    image: "",
-    cta: "VIEW WORK →",
-    ctaHref: "#work",
-  }
-  const projectBlocks: FolioBlock[] = projects.map((project, index) => ({
-    ...createBlock("featured", portfolio, "frame"),
-    id: `featured-${index + 1}`,
-    heading:
-      project.title.trim() || `Work ${String(index + 1).padStart(2, "0")}`,
-    eyebrow: project.category,
-    body: project.detail.trim() || categoryLabel(project.category),
-    image:
-      project.image ||
-      STUDENT_WORK[index % STUDENT_WORK.length]?.src ||
-      PROJECT_SRC.frame,
-    mediaKind: project.image ? project.mediaKind : "image",
-    imageAlt: project.title.trim() || `Work ${index + 1}`,
-  }))
-  const about = {
-    ...createBlock("about", portfolio, "frame"),
-    id: "about-story",
-    heading: state.aboutHeading.trim() || "Less noise.\nMore work.",
-    body:
-      state.aboutBody.trim() ||
-      `${portfolio.name} is a visual archive for selected creative work.`,
-    image: "",
-  }
-  const contact = {
-    ...createBlock("contact", portfolio, "frame"),
-    id: "contact-invitation",
-    heading: "Have an idea?\nLet's make it.",
-    body: categories.join(" · ") || "Films · Ads · Graphics",
-    cta: `${portfolio.settings.email.toUpperCase()} ↗`,
-    ctaHref: `mailto:${portfolio.settings.email}`,
-    image: "",
-  }
-
-  const next = {
-    ...portfolio,
-    blocks: [hero, ...projectBlocks, about, contact],
-  }
-  return { ...next, seo: defaultSeo(next) }
 }
 
-function readSavedState(): FrameOnboardingState {
-  try {
-    const raw = window.localStorage.getItem(ONBOARDING_KEY)
-    if (!raw) return INITIAL_STATE
-    const parsed = JSON.parse(raw) as Partial<FrameOnboardingState>
-    return {
-      ...INITIAL_STATE,
-      ...parsed,
-      step: parsed.step === 2 ? 2 : 1,
-      projects: parsed.projects?.length
-        ? parsed.projects
-        : INITIAL_STATE.projects,
-    }
-  } catch {
-    return INITIAL_STATE
+/** A style card shows the student's own page once they have content, and the
+ *  seeded stand-in before that, so every card is judged on style alone. */
+function previewValue(value: FrameOnboardingState, variant: FrameVariantId): FrameOnboardingState {
+  const hasOwn = Boolean(value.identity.displayName.trim() || value.identity.headline.trim() || value.projects.some(p => p.media))
+  const base = hasOwn ? value : { ...SEED, branding: { ...SEED.branding, ...value.branding } }
+  const preset = frameVariant(variant)
+  return {
+    ...base,
+    branding: {
+      ...base.branding,
+      frameVariant: preset.id,
+      accentColor: preset.accentColor,
+      backgroundColor: preset.backgroundColor,
+      textColor: preset.textColor,
+      buttonStyle: preset.buttonStyle,
+    },
   }
 }
 
-function ScaledFramePreview({ portfolio }: { portfolio: StoredPortfolio }) {
-  const viewportRef = React.useRef<HTMLDivElement>(null)
-  const contentRef = React.useRef<HTMLDivElement>(null)
-  const [geometry, setGeometry] = React.useState({ scale: 1, height: 0 })
+function Message({ id, text }: { id: string; text?: string }) {
+  return text ? <p id={id} role="alert" className="fo-error">{text}</p> : null
+}
 
-  React.useLayoutEffect(() => {
-    const viewport = viewportRef.current
-    const content = contentRef.current
-    if (!viewport || !content) return
+function Toggle({ label, note, value, onChange }: { label: string; note: string; value: boolean; onChange: (value: boolean) => void }) {
+  return <label className="fo-toggle"><span className="fo-toggle-copy"><strong>{label}</strong><span>{note}</span></span><input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} className="sr-only" /><span className="fo-toggle-box" aria-hidden="true" /></label>
+}
 
-    let frame = 0
-    function measure() {
-      window.cancelAnimationFrame(frame)
-      frame = window.requestAnimationFrame(() => {
-        const scale = viewport!.clientWidth / 1120
-        const height = Math.ceil(content!.scrollHeight * scale)
-        setGeometry((current) =>
-          current.scale === scale && current.height === height
-            ? current
-            : { scale, height }
+function Preview({ value }: { value: FrameOnboardingState }) {
+  return <TasteFolio portfolio={buildPortfolioDraft(value)} template="frame" />
+}
+
+/* Each style's display face is loaded globally by next/font, so the row name
+   can speak in the style's own voice — same trick the old font picker used. */
+const STYLE_ROW_FONT: Record<FrameVariantId, string> = {
+  frame: 'Georgia, "Times New Roman", serif',
+  press: "var(--font-folio), Didot, serif",
+  void: 'var(--font-walk), "Palatino Linotype", serif',
+  studio: "var(--font-flood), ui-sans-serif, sans-serif",
+  column: "var(--font-aperture), Georgia, serif",
+}
+
+function StylePicker({ selected, onSelect }: { selected: FrameVariantId; onSelect: (id: FrameVariantId) => void }) {
+  return (
+    <ul className="fo-styles">
+      {FRAME_VARIANTS.map((variant) => {
+        const on = selected === variant.id
+        return (
+          <li key={variant.id}>
+            <button type="button" className="fo-style" aria-pressed={on} onClick={() => onSelect(variant.id)}>
+              <span className="fo-style-copy">
+                <span className="fo-style-name" style={{ fontFamily: STYLE_ROW_FONT[variant.id] }}>{variant.name}</span>
+                <span className="fo-style-blurb">{variant.blurb}</span>
+              </span>
+              <span className="fo-style-side">
+                <span className="fo-style-swatches" aria-hidden="true">
+                  <span className="fo-style-swatch" style={{ background: variant.backgroundColor }} />
+                  <span className="fo-style-swatch" style={{ background: variant.textColor }} />
+                  <span className="fo-style-swatch" style={{ background: variant.accentColor }} />
+                </span>
+                {on && <span className="fo-style-check"><Check className="size-3" /></span>}
+              </span>
+            </button>
+          </li>
         )
-      })
-    }
-
-    const observer = new ResizeObserver(measure)
-    observer.observe(viewport)
-    observer.observe(content)
-    measure()
-
-    return () => {
-      window.cancelAnimationFrame(frame)
-      observer.disconnect()
-    }
-  }, [portfolio])
-
-  return (
-    <div
-      ref={viewportRef}
-      className="relative w-full overflow-hidden"
-      style={{ height: geometry.height || undefined }}
-    >
-      <div
-        ref={contentRef}
-        className="absolute top-0 left-0 w-[1120px] origin-top-left"
-        style={{
-          transform: `scale(${geometry.scale})`,
-          visibility: geometry.height ? "visible" : "hidden",
-        }}
-      >
-        <FolioCanvas portfolio={portfolio} template="frame" />
-      </div>
-    </div>
+      })}
+    </ul>
   )
 }
 
-export function FrameOnboarding() {
+export function FrameOnboarding({ initialStep = 1 }: { initialStep?: Step }) {
   const router = useRouter()
-  const [state, setState] = React.useState<FrameOnboardingState>(INITIAL_STATE)
-  const [mounted, setMounted] = React.useState(false)
-  const [errors, setErrors] = React.useState<Record<string, string>>({})
-  const [imageError, setImageError] = React.useState("")
+  const [step, setStep] = React.useState<Step>(initialStep), [value, setValue] = React.useState(DEFAULTS)
+  const [errors, setErrors] = React.useState<Record<string, string>>({}), [loading, setLoading] = React.useState(true)
+  const [launching, setLaunching] = React.useState(false), [uploading, setUploading] = React.useState<string | null>(null)
+  const [save, setSave] = React.useState<"" | "Saving…" | "Saved" | "Changes not saved">("")
+  const hydrated = React.useRef(false)
 
-  React.useEffect(() => {
-    const id = window.setTimeout(() => {
-      setState(readSavedState())
-      setMounted(true)
-    }, 0)
-    return () => window.clearTimeout(id)
-  }, [])
+  React.useEffect(() => { let active = true; void fetch("/api/onboarding/draft", { cache: "no-store" }).then(async r => { if (!r.ok) throw new Error(); const b = await r.json() as { onboarding?: Partial<FrameOnboardingState> }; if (active) setValue(mergeDraft(b.onboarding)) }).catch(() => active && setSave("Changes not saved")).finally(() => { if (active) { hydrated.current = true; setLoading(false) } }); return () => { active = false } }, [])
+  React.useEffect(() => { if (!hydrated.current) return; const controller = new AbortController(), timer = window.setTimeout(() => { setSave("Saving…"); void fetch("/api/onboarding/draft", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(value), signal: controller.signal }).then(r => { if (!r.ok) throw new Error(); setSave("Saved") }).catch(e => { if (e?.name !== "AbortError") setSave("Changes not saved") }) }, 650); return () => { clearTimeout(timer); controller.abort() } }, [value, step])
 
-  React.useEffect(() => {
-    if (!mounted) return
-    window.localStorage.setItem(ONBOARDING_KEY, JSON.stringify(state))
-  }, [mounted, state])
+  const identity = (u: Partial<FrameOnboardingState["identity"]>) => setValue(v => ({ ...v, identity: { ...v.identity, ...u } }))
+  const branding = (u: Partial<FrameOnboardingState["branding"]>) => setValue(v => ({ ...v, branding: { ...v.branding, ...u } }))
+  const presentation = (u: Partial<FrameOnboardingState["presentation"]>) => setValue(v => ({ ...v, presentation: { ...v.presentation, ...u } }))
+  const copy = (u: Partial<FrameOnboardingState["copy"]>) => setValue(v => ({ ...v, copy: { ...v.copy, ...u } }))
+  const socials = (u: Partial<FrameOnboardingState["socials"]>) => setValue(v => ({ ...v, socials: { ...v.socials, ...u } }))
+  const project = (id: string, u: Partial<Project>) => setValue(v => ({ ...v, projects: v.projects.map(p => p.id === id ? { ...p, ...u } : p) }))
+  const go = (s: Step) => { setStep(s); setErrors({}); router.push(`/onboarding/${s}`, { scroll: false }) }
 
-  const preview = React.useMemo(() => buildPortfolio(state, "preview"), [state])
-
-  function patch(patchValue: Partial<FrameOnboardingState>) {
-    setState((current) => ({ ...current, ...patchValue }))
+  /* Picking a style writes the preset's palette and action shape into branding
+     so they stay a single source of truth and remain editable later. */
+  const pickVariant = (id: FrameVariantId) => {
+    const preset = frameVariant(id)
+    branding({ frameVariant: preset.id, accentColor: preset.accentColor, backgroundColor: preset.backgroundColor, textColor: preset.textColor, buttonStyle: preset.buttonStyle })
   }
 
-  function patchProject(id: string, patchValue: Partial<ProjectInput>) {
-    patch({
-      projects: state.projects.map((project) =>
-        project.id === id ? { ...project, ...patchValue } : project
-      ),
-    })
+  /* Navigating between /onboarding/[step] segments remounts this component and
+     rehydrates from the server draft, so anything decided inside a handler must
+     be persisted as the payload — local setValue alone is discarded. */
+  async function persistOnboarding(payload: FrameOnboardingState = value) {
+    setSave("Saving…")
+    const response = await fetch("/api/onboarding/draft", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+    if (!response.ok) throw new Error(apiErrorMessage(await response.json().catch(() => null), "Your changes could not be saved."))
+    setSave("Saved")
   }
 
-  function validateIdentity() {
-    const next: Record<string, string> = {}
-    if (!state.brand.trim())
-      next.brand = "Enter the name shown on your portfolio."
-    if (!state.heroPrimary.trim()) next.heroPrimary = "Add the main headline."
-    if (!state.intro.trim()) next.intro = "Add a short introduction."
-    if (!state.email.trim()) next.email = "Add the email visitors should use."
-    if (state.email && !/^\S+@\S+\.\S+$/.test(state.email)) {
-      next.email = "Enter a valid email address."
+  async function back() {
+    if (step === 1) return router.push("/dashboard")
+    try {
+      await persistOnboarding()
+      go((step - 1) as Step)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Your changes could not be saved.")
     }
-    setErrors(next)
-    return Object.keys(next).length === 0
   }
 
-  function continueToProjects() {
-    if (!validateIdentity()) return
-    patch({ step: 2 })
-    window.scrollTo({ top: 0, behavior: "smooth" })
-  }
+  async function attach(file: File, target: string) { const logo = target === "logo"; if (logo ? !file.type.startsWith("image/") : !(file.type.startsWith("image/") || file.type.startsWith("video/"))) return toast.error(logo ? "Choose an image for your logo." : "Choose an image or video."); setUploading(target); try { const asset = await uploadToR2(file); if (logo) branding({ logo: asset }); else project(target, { media: asset }); toast.success("Upload complete.") } catch (e) { toast.error(e instanceof Error ? e.message : "Upload failed.") } finally { setUploading(null) } }
+  function validate() { const e: Record<string, string> = {}; if (step === 2) { if (!value.identity.displayName.trim()) e.displayName = "Add the name visitors should see."; if (!value.identity.headline.trim()) e.headline = "Add a short headline."; if (!value.identity.intro.trim()) e.intro = "Add a short introduction."; if (!/^\S+@\S+\.\S+$/.test(value.identity.email)) e.email = "Enter a valid email."; if (value.branding.logoMode !== "mark" && !value.branding.wordmark.trim() && !value.identity.displayName.trim()) e.wordmark = "Add your wordmark."; if (value.branding.logoMode === "mark" && !value.branding.logo) e.logo = "Upload a logo or choose Wordmark." } if (step === 3) value.projects.forEach((p, i) => { if (!p.title.trim()) e[`${p.id}-title`] = `Add a title for project ${i + 1}.`; if (!p.media) e[`${p.id}-media`] = `Add media for project ${i + 1}.` }); if (step === 4) { if (!value.presentation.seoTitle.trim()) e.seoTitle = "Add a page title."; if (!value.presentation.seoDescription.trim()) e.seoDescription = "Add a search description." } setErrors(e); return !Object.keys(e).length }
+  async function next() { if (!validate()) return; if (step < 4) { /* Arriving at Review with the search fields already filled from earlier
+       answers turns the last step into a confirm, not a form. */ let payload = value; if (step === 3) { payload = { ...value, presentation: { ...value.presentation, seoTitle: value.presentation.seoTitle || `${value.identity.displayName} — Portfolio`, seoDescription: value.presentation.seoDescription || value.identity.intro.slice(0, 160) } }; setValue(payload) } try { await persistOnboarding(payload); go((step + 1) as Step) } catch (error) { toast.error(error instanceof Error ? error.message : "Your changes could not be saved.") } return } setLaunching(true); try { await persistOnboarding(); const r = await fetch("/api/portfolios", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ template: "frame", name: value.identity.displayName, onboarding: value, draftSnapshot: buildPortfolioDraft(value) }) }); if (!r.ok) throw new Error(apiErrorMessage(await r.json().catch(() => null), "Portfolio could not be created.")); const b = await r.json() as { slug?: string; portfolio?: { slug?: string } }; const slug = b.portfolio?.slug || b.slug; if (!slug) throw new Error("No portfolio address was returned."); router.push(`/edit/${encodeURIComponent(slug)}?welcome=1`) } catch (e) { toast.error(e instanceof Error ? e.message : "Portfolio could not be created."); setLaunching(false) } }
 
-  function createPortfolio() {
-    const next: Record<string, string> = {}
-    state.projects.forEach((project, index) => {
-      if (!project.title.trim()) {
-        next[`project-${project.id}`] = `Name project ${index + 1}.`
-      }
-    })
-    setErrors(next)
-    if (Object.keys(next).length) return
-
-    const slug = uniquePortfolioSlug(state.brand)
-    const portfolio = buildPortfolio(state, slug)
-    saveDraft(slug, portfolio)
-    window.localStorage.removeItem(ONBOARDING_KEY)
-    router.push(`/edit/${slug}?welcome=1`)
-  }
-
-  async function uploadProjectMedia(id: string, file?: File) {
-    if (!file) return
-    setImageError("")
-    const mediaKind = file.type.startsWith("video/") ? "video" : "image"
-    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
-      setImageError("Choose an image or video file.")
-      return
-    }
-    const maxBytes = mediaKind === "video" ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES
-    if (file.size > maxBytes) {
-      setImageError(
-        mediaKind === "video"
-          ? "Choose a video smaller than 3 MB, or paste a direct video URL."
-          : "Choose an image smaller than 1.5 MB."
-      )
-      return
-    }
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(String(reader.result))
-      reader.onerror = () => reject(new Error("Media could not be read"))
-      reader.readAsDataURL(file)
-    }).catch(() => "")
-    if (!dataUrl) {
-      setImageError("That file could not be read. Try another one.")
-      return
-    }
-    patchProject(id, { image: dataUrl, mediaKind })
-  }
-
-  return (
-    <div className="afm-dashboard fixed inset-0 grid overflow-hidden bg-background lg:grid-cols-[minmax(24rem,32rem)_1fr]">
-      <section className="flex min-h-0 flex-col border-r border-border bg-background">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-5 md:px-8">
-          <a
-            href="/dashboard"
-            className="flex items-center gap-2"
-            aria-label="AFM dashboard"
-          >
-            <span className="flex size-5.5 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <span className="size-2 rounded-[2px] bg-current" aria-hidden />
-            </span>
-            <span className="text-xl font-semibold tracking-tight">AFM</span>
-          </a>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            Step {state.step} of 2
-          </span>
-        </header>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-8 md:px-8 md:py-10">
-          <div className="mx-auto w-full max-w-md">
-            {state.step === 1 ? (
-              <div className="flex flex-col gap-8">
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-semibold tracking-[-0.03em] text-balance">
-                    Make the page yours
-                  </h1>
-                  <p className="max-w-md text-sm leading-6 text-muted-foreground">
-                    These words appear directly in the Frame portfolio preview.
-                  </p>
-                </div>
-
-                <FieldGroup className="gap-5">
-                  <Field>
-                    <FieldLabel htmlFor="frame-brand">
-                      Portfolio or studio name
-                    </FieldLabel>
-                    <Input
-                      id="frame-brand"
-                      value={state.brand}
-                      placeholder="FRAME"
-                      autoComplete="organization"
-                      aria-invalid={Boolean(errors.brand)}
-                      aria-describedby={
-                        errors.brand ? "frame-brand-error" : undefined
-                      }
-                      onChange={(event) => patch({ brand: event.target.value })}
-                    />
-                    {errors.brand ? (
-                      <p
-                        id="frame-brand-error"
-                        className="text-xs text-destructive"
-                      >
-                        {errors.brand}
-                      </p>
-                    ) : null}
-                  </Field>
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <Field>
-                      <FieldLabel htmlFor="frame-headline-primary">
-                        Main headline
-                      </FieldLabel>
-                      <Input
-                        id="frame-headline-primary"
-                        value={state.heroPrimary}
-                        placeholder="AI made visual."
-                        aria-invalid={Boolean(errors.heroPrimary)}
-                        onChange={(event) =>
-                          patch({ heroPrimary: event.target.value })
-                        }
-                      />
-                      {errors.heroPrimary ? (
-                        <p className="text-xs text-destructive">
-                          {errors.heroPrimary}
-                        </p>
-                      ) : null}
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="frame-headline-secondary">
-                        Secondary headline
-                      </FieldLabel>
-                      <Input
-                        id="frame-headline-secondary"
-                        value={state.heroSecondary}
-                        onChange={(event) =>
-                          patch({ heroSecondary: event.target.value })
-                        }
-                      />
-                    </Field>
-                  </div>
-                  <Field>
-                    <FieldLabel htmlFor="frame-intro">
-                      Short introduction
-                    </FieldLabel>
-                    <Textarea
-                      id="frame-intro"
-                      value={state.intro}
-                      className="min-h-24"
-                      placeholder="A focused archive of films, campaigns and visual experiments."
-                      aria-invalid={Boolean(errors.intro)}
-                      onChange={(event) => patch({ intro: event.target.value })}
-                    />
-                    {errors.intro ? (
-                      <p className="text-xs text-destructive">{errors.intro}</p>
-                    ) : null}
-                  </Field>
-                  <div className="border-t border-border pt-5">
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <Field>
-                        <FieldLabel htmlFor="frame-about-heading">
-                          About heading
-                        </FieldLabel>
-                        <Textarea
-                          id="frame-about-heading"
-                          value={state.aboutHeading}
-                          className="min-h-20"
-                          onChange={(event) =>
-                            patch({ aboutHeading: event.target.value })
-                          }
-                        />
-                      </Field>
-                      <Field>
-                        <FieldLabel htmlFor="frame-email">
-                          Contact email
-                        </FieldLabel>
-                        <Input
-                          id="frame-email"
-                          type="email"
-                          value={state.email}
-                          placeholder="hello@example.com"
-                          autoComplete="email"
-                          aria-invalid={Boolean(errors.email)}
-                          onChange={(event) =>
-                            patch({ email: event.target.value })
-                          }
-                        />
-                        {errors.email ? (
-                          <p className="text-xs text-destructive">
-                            {errors.email}
-                          </p>
-                        ) : null}
-                      </Field>
-                    </div>
-                  </div>
-                  <Field>
-                    <FieldLabel htmlFor="frame-about-body">
-                      About description
-                    </FieldLabel>
-                    <Textarea
-                      id="frame-about-body"
-                      value={state.aboutBody}
-                      className="min-h-24"
-                      placeholder="Describe the work you make and what you want visitors to notice."
-                      onChange={(event) =>
-                        patch({ aboutBody: event.target.value })
-                      }
-                    />
-                  </Field>
-                </FieldGroup>
-
-                <Button
-                  type="button"
-                  className="h-11 justify-between px-4 font-normal"
-                  onClick={continueToProjects}
-                >
-                  Add your work
-                  <ArrowRight className="size-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-8">
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-semibold tracking-[-0.03em] text-balance">
-                    Add selected work
-                  </h1>
-                  <p className="max-w-md text-sm leading-6 text-muted-foreground">
-                    The first project becomes the large featured image. Reorder
-                    later in the editor.
-                  </p>
-                </div>
-
-                <div className="flex flex-col border-y border-border">
-                  {state.projects.map((project, index) => (
-                    <section
-                      key={project.id}
-                      className="border-b border-border py-6 last:border-b-0"
-                    >
-                      <div className="mb-5 flex items-center justify-between gap-3">
-                        <h2 className="text-sm font-medium">
-                          {index === 0
-                            ? "Featured project"
-                            : `Project ${index + 1}`}
-                        </h2>
-                        {state.projects.length > 1 ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-10"
-                            aria-label={`Remove project ${index + 1}`}
-                            onClick={() =>
-                              patch({
-                                projects: state.projects.filter(
-                                  (item) => item.id !== project.id
-                                ),
-                              })
-                            }
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        ) : null}
-                      </div>
-                      <div className="grid gap-5">
-                        <Field>
-                          <FieldLabel htmlFor={`${project.id}-title`}>
-                            Project title
-                          </FieldLabel>
-                          <Input
-                            id={`${project.id}-title`}
-                            value={project.title}
-                            placeholder="After Tomorrow"
-                            aria-invalid={Boolean(
-                              errors[`project-${project.id}`]
-                            )}
-                            onChange={(event) =>
-                              patchProject(project.id, {
-                                title: event.target.value,
-                              })
-                            }
-                          />
-                          {errors[`project-${project.id}`] ? (
-                            <p className="text-xs text-destructive">
-                              {errors[`project-${project.id}`]}
-                            </p>
-                          ) : null}
-                        </Field>
-                        <div className="grid gap-5 sm:grid-cols-2">
-                          <Field>
-                            <FieldLabel htmlFor={`${project.id}-category`}>
-                              Category
-                            </FieldLabel>
-                            <select
-                              id={`${project.id}-category`}
-                              value={project.category}
-                              className="h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              onChange={(event) =>
-                                patchProject(project.id, {
-                                  category: event.target
-                                    .value as ProjectCategory,
-                                })
-                              }
-                            >
-                              <option value="film">Film</option>
-                              <option value="ad">Ad</option>
-                              <option value="graphic">Graphics</option>
-                            </select>
-                          </Field>
-                          <Field>
-                            <FieldLabel htmlFor={`${project.id}-detail`}>
-                              Short detail
-                            </FieldLabel>
-                            <Input
-                              id={`${project.id}-detail`}
-                              value={project.detail}
-                              placeholder="AI short film · 04:18"
-                              onChange={(event) =>
-                                patchProject(project.id, {
-                                  detail: event.target.value,
-                                })
-                              }
-                            />
-                          </Field>
-                        </div>
-                        <Field>
-                          <FieldLabel htmlFor={`${project.id}-image-url`}>
-                            Project media
-                          </FieldLabel>
-                          {project.image ? (
-                            <div className="relative overflow-hidden rounded-xl bg-muted">
-                              {project.mediaKind === "video" ? (
-                                <video
-                                  src={project.image}
-                                  className="aspect-[2/1] w-full object-cover"
-                                  controls
-                                  playsInline
-                                  preload="metadata"
-                                />
-                              ) : (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={project.image}
-                                  alt=""
-                                  className="aspect-[2/1] w-full object-cover"
-                                />
-                              )}
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                className="absolute right-2 bottom-2 h-9 bg-background/95"
-                                onClick={() =>
-                                  patchProject(project.id, {
-                                    image: "",
-                                    mediaKind: "image",
-                                  })
-                                }
-                              >
-                                Remove
-                              </Button>
-                            </div>
-                          ) : (
-                            <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card px-4 text-center hover:bg-(--card-hover)">
-                              <Clapperboard className="size-5 text-muted-foreground" />
-                              <span className="mt-2 text-sm font-medium">
-                                Upload image or video
-                              </span>
-                              <span className="mt-1 text-xs text-muted-foreground">
-                                Images to 1.5 MB · videos to 3 MB
-                              </span>
-                              <input
-                                type="file"
-                                accept="image/*,video/*"
-                                className="sr-only"
-                                onChange={(event) =>
-                                  void uploadProjectMedia(
-                                    project.id,
-                                    event.target.files?.[0]
-                                  )
-                                }
-                              />
-                            </label>
-                          )}
-                          <Input
-                            id={`${project.id}-image-url`}
-                            value={
-                              project.image.startsWith("data:")
-                                ? ""
-                                : project.image
-                            }
-                            placeholder="Or paste a direct image or video URL"
-                            aria-label={`Project ${index + 1} media URL`}
-                            onChange={(event) =>
-                              patchProject(project.id, {
-                                image: event.target.value,
-                                mediaKind: /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(
-                                  event.target.value
-                                )
-                                  ? "video"
-                                  : "image",
-                              })
-                            }
-                          />
-                          {imageError ? (
-                            <p className="text-xs text-destructive">
-                              {imageError}
-                            </p>
-                          ) : null}
-                        </Field>
-                      </div>
-                    </section>
-                  ))}
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 gap-2 font-normal"
-                  onClick={() =>
-                    patch({
-                      projects: [
-                        ...state.projects,
-                        {
-                          id: `project-${Date.now()}`,
-                          title: "",
-                          category: "graphic",
-                          detail: "",
-                          image: "",
-                          mediaKind: "image",
-                        },
-                      ],
-                    })
-                  }
-                >
-                  <Plus className="size-4" />
-                  Add another project
-                </Button>
-
-                <div className="flex items-center justify-between gap-3">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-11 gap-2 px-2 font-normal"
-                    onClick={() => patch({ step: 1 })}
-                  >
-                    <ArrowLeft className="size-4" />
-                    Back
-                  </Button>
-                  <Button
-                    type="button"
-                    className="h-11 gap-2 px-4 font-normal"
-                    onClick={createPortfolio}
-                  >
-                    Create my portfolio
-                    <ArrowRight className="size-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <aside
-        className="relative hidden min-h-0 overflow-hidden bg-[#d7ccb7] lg:block"
-        aria-label="Live portfolio preview"
-      >
-        <div className="absolute inset-5 overflow-y-auto rounded-xl bg-white shadow-[0_18px_50px_rgba(17,17,17,0.16)]">
-          <ScaledFramePreview portfolio={preview} />
-        </div>
-        <div
-          className={cn(
-            "pointer-events-none absolute right-8 bottom-8 rounded-lg bg-black px-3 py-2 text-xs text-white shadow-lg",
-            !mounted && "opacity-0"
-          )}
-        >
-          Live preview
-        </div>
-      </aside>
-    </div>
-  )
+  if (loading) return <div className="frame-onboarding grid place-items-center"><span className="flex items-center gap-3 text-xs uppercase tracking-[.08em]"><Loader2 className="size-4 animate-spin" />Preparing your Frame</span></div>
+  const meta = STEPS[step - 1]
+  const activeVariant = frameVariant(value.branding.frameVariant)
+  return <div className="afm-dashboard no-scrollbar frame-onboarding"><div className="fo-shell">
+    <section className="fo-panel" aria-labelledby="onboarding-title">
+      <header className="fo-header"><button type="button" onClick={() => router.push("/dashboard")} className="fo-brand" aria-label="Return to dashboard"><span className="fo-brand-mark" aria-hidden="true" /><strong>AFM</strong><span className="fo-brand-badge">Onboarding</span></button><span className="fo-save" data-state={save} aria-live="polite">{save}</span></header>
+      <ol className="fo-progress" aria-label="Onboarding progress">{STEPS.map((s, i) => <li key={s[0]}><button type="button" disabled={i + 1 > step} onClick={() => i + 1 < step && go((i + 1) as Step)} aria-current={i + 1 === step ? "step" : undefined} className="fo-step"><span>{String(i + 1).padStart(2, "0")}</span>{s[0]}</button></li>)}</ol>
+      <div className="fo-content"><div className="fo-form"><h1 id="onboarding-title" className="sr-only">{meta[0]}</h1><p className="fo-intro">{meta[1]}</p>
+        {step === 1 && <StylePicker selected={activeVariant.id} onSelect={pickVariant} />}
+        {step === 2 && <div className="fo-fields">
+          <label className="fo-label">Name or studio name<Input className="fo-input" value={value.identity.displayName} onChange={e => identity({ displayName: e.target.value })} placeholder="Nadia Rahman" aria-invalid={!!errors.displayName} /><Message id="displayName-error" text={errors.displayName} /></label>
+          <label className="fo-label">Portfolio headline<Input className="fo-input" value={value.identity.headline} onChange={e => identity({ headline: e.target.value })} placeholder="AI made visual. / Human made creative." aria-invalid={!!errors.headline} /><Message id="headline-error" text={errors.headline} /><span className="fo-hint">Use a slash to create the template&apos;s two-line headline.</span></label>
+          <label className="fo-label">Short introduction<Textarea className="fo-textarea" value={value.identity.intro} onChange={e => identity({ intro: e.target.value })} maxLength={320} placeholder="Two sentences about your practice." /><Message id="intro-error" text={errors.intro} /></label>
+          <label className="fo-label">Contact email<Input className="fo-input" type="email" value={value.identity.email} onChange={e => identity({ email: e.target.value })} placeholder="hello@example.com" /><Message id="email-error" text={errors.email} /></label>
+          <fieldset><legend className="fo-legend">Page copy</legend><div className="fo-fields mt-2">
+            <label className="fo-label">Work button label<Input className="fo-input" value={value.copy.heroCta} onChange={e => copy({ heroCta: e.target.value })} placeholder="VIEW WORK →" /><span className="fo-hint">The button under your headline that jumps to your projects.</span></label>
+            <label className="fo-label">About heading<Input className="fo-input" value={value.copy.aboutHeading} onChange={e => copy({ aboutHeading: e.target.value })} placeholder="Less noise. / More work." /><span className="fo-hint">Use a slash to create the two-line heading.</span></label>
+            <label className="fo-label">About description<Textarea className="fo-textarea" value={value.copy.aboutBody} onChange={e => copy({ aboutBody: e.target.value })} maxLength={480} placeholder="A longer note about your practice for the About section." /><span className="fo-hint">Optional — defaults to your short introduction.</span></label>
+            <label className="fo-label">Contact heading<Input className="fo-input" value={value.copy.contactHeading} onChange={e => copy({ contactHeading: e.target.value })} placeholder="Have an idea? / Let's make it." /><span className="fo-hint">Use a slash — the second line gets the highlight.</span></label>
+            <label className="fo-label">Footer line<Input className="fo-input" value={value.copy.footerNote} onChange={e => copy({ footerNote: e.target.value })} placeholder="AI FILMS · ADS · GRAPHICS" /><span className="fo-hint">Optional — defaults to your project disciplines.</span></label>
+          </div></fieldset>
+          <fieldset><legend className="fo-legend">Social links</legend><span className="fo-hint">Paste a handle, number, or full link — only filled platforms appear in your footer.</span><div className="fo-socials">
+            {([["instagram", "Instagram", "@yourstudio"], ["whatsapp", "WhatsApp", "+91 98765 43210"], ["youtube", "YouTube", "@yourstudio"], ["vimeo", "Vimeo", "yourstudio"], ["tiktok", "TikTok", "@yourstudio"], ["linkedin", "LinkedIn", "yourstudio"]] as const).map(([key, label, ph]) => (
+              <label key={key} className="fo-label">{label}<Input className="fo-input" value={value.socials[key]} onChange={e => socials({ [key]: e.target.value })} placeholder={ph} /></label>
+            ))}
+          </div></fieldset>
+          <fieldset><legend className="fo-legend">How your name appears</legend><div className="fo-choices">{(["wordmark", "mark", "both"] as const).map(m => <button type="button" key={m} onClick={() => branding({ logoMode: m })} className="fo-choice" data-selected={value.branding.logoMode === m}>{m}</button>)}</div></fieldset>
+          {value.branding.logoMode !== "mark" && <label className="fo-label">Wordmark<Input className="fo-input" value={value.branding.wordmark} onChange={e => branding({ wordmark: e.target.value })} placeholder={value.identity.displayName || "Your studio"} /><span className="fo-hint">Optional — defaults to your display name.</span><Message id="wordmark-error" text={errors.wordmark} /></label>}
+          {value.branding.logoMode !== "wordmark" && <label className="fo-upload">{uploading === "logo" ? <span className="fo-upload-inner"><Loader2 className="size-5 animate-spin" />Uploading logo</span> : <span className="fo-upload-inner"><Upload className="size-5" />{value.branding.logo ? "Replace logo mark" : "Upload logo mark"}<small>PNG, JPG, WebP, SVG</small></span>}<input className="sr-only" type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) void attach(f, "logo") }} /><Message id="logo-error" text={errors.logo} /></label>}
+        </div>}
+        {step === 3 && <div className="fo-fields">{value.projects.map((p, i) => <fieldset key={p.id} className="fo-project" aria-labelledby={`${p.id}-legend`}><div className="fo-project-head" id={`${p.id}-legend`}><span><small>{String(i + 1).padStart(2, "0")} / {i === 0 ? "Featured" : "Selected work"}</small>{i === 0 ? "Featured project" : `Project ${i + 1}`}</span>{value.projects.length > 1 && <button type="button" className="fo-remove" onClick={() => setValue(v => ({ ...v, projects: v.projects.filter(x => x.id !== p.id) }))} aria-label={`Remove ${p.title || `project ${i + 1}`}`}><Trash2 className="size-4" /></button>}</div><div className="fo-fields mt-6">
+          <label className="fo-label">Title<Input className="fo-input" value={p.title} onChange={e => project(p.id, { title: e.target.value })} /><Message id={`${p.id}-title-error`} text={errors[`${p.id}-title`]} /></label>
+          <label className="fo-label">Discipline<span className="fo-select-wrap"><select value={p.category} onChange={e => project(p.id, { category: e.target.value })} className="fo-select appearance-none px-3"><option>Film</option><option>Photography</option><option>Animation</option><option>Design</option><option>Other</option></select><ChevronDown aria-hidden="true" /></span></label>
+          <label className="fo-label">Short description<Input className="fo-input" value={p.description} onChange={e => project(p.id, { description: e.target.value })} /></label>
+          <label className="fo-upload">{p.media ? <span className="fo-upload-inner"><Check className="size-5" />{p.media.fileName || "Media uploaded"}<small>Choose another file to replace it</small></span> : <span className="fo-upload-inner"><Upload className="size-5" />Upload image or video<small>JPG, PNG, WebP, MP4, WebM, or MOV</small></span>}<input className="sr-only" type="file" accept="image/*,video/mp4,video/webm,video/quicktime" onChange={e => { const f = e.target.files?.[0]; if (f) void attach(f, p.id) }} /></label><Message id={`${p.id}-media-error`} text={errors[`${p.id}-media`]} />
+        </div></fieldset>)}<button type="button" className="fo-add" onClick={() => setValue(v => ({ ...v, projects: [...v.projects, { id: crypto.randomUUID(), title: "", category: "Film", description: "", media: null }] }))}><Plus className="size-4" />Add another project</button></div>}
+        {step === 4 && <div className="fo-fields"><div className="fo-toggles"><Toggle label="Work link" note="Jump visitors directly to your projects." value={value.presentation.showWorkNav} onChange={v => presentation({ showWorkNav: v })} /><Toggle label="About link" note="Keep your introduction easy to find." value={value.presentation.showAboutNav} onChange={v => presentation({ showAboutNav: v })} /><Toggle label="Contact link" note="Show contact in the navigation." value={value.presentation.showContactNav} onChange={v => presentation({ showContactNav: v })} /><Toggle label="Contact section" note="Show the closing inquiry section and email action." value={value.presentation.showContactCta} onChange={v => presentation({ showContactCta: v })} /></div><label className="fo-label">Page title<Input className="fo-input" value={value.presentation.seoTitle} onChange={e => presentation({ seoTitle: e.target.value })} onFocus={() => !value.presentation.seoTitle && presentation({ seoTitle: `${value.identity.displayName} — Portfolio` })} /><span className="fo-hint">Prefilled from your name — adjust anytime.</span><Message id="seo-title-error" text={errors.seoTitle} /></label><label className="fo-label">Search description<Textarea className="fo-textarea" maxLength={160} value={value.presentation.seoDescription} onChange={e => presentation({ seoDescription: e.target.value })} onFocus={() => !value.presentation.seoDescription && presentation({ seoDescription: value.identity.intro.slice(0, 160) })} /><span className="fo-count">{value.presentation.seoDescription.length}/160</span><Message id="seo-description-error" text={errors.seoDescription} /></label><div className="fo-toggles"><Toggle label="Allow search indexing" note="Search engines may list your published portfolio." value={value.presentation.allowIndexing} onChange={v => presentation({ allowIndexing: v })} /></div></div>}
+      </div></div>
+      <footer className="fo-footer"><button type="button" className="fo-back" onClick={() => void back()}><ArrowLeft className="size-4" />{step === 1 ? "Exit" : "Back"}</button><button type="button" className="fo-action" onClick={() => void next()} disabled={launching || !!uploading}>{launching ? <Loader2 className="size-4 animate-spin" /> : step === 4 ? <ExternalLink className="size-4" /> : null}{step === 4 ? "Create portfolio" : "Continue"}{step < 4 && <ArrowRight className="size-4" />}</button></footer>
+    </section>
+    <aside className="fo-preview" aria-label="Live portfolio preview"><div className="fo-preview-head"><span className="fo-preview-label">Live preview</span><span className="fo-preview-template">{activeVariant.name} style</span></div><div className="fo-preview-canvas">{/* On the style step the preview wears seeded stand-in content until the
+        student has typed their own, so switching styles always shows a full page. */}
+      <Preview value={step === 1 ? previewValue(value, activeVariant.id) : value} /></div></aside>
+  </div></div>
 }

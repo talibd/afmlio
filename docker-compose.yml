@@ -1,0 +1,60 @@
+name: afmlio
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-afm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-afm}
+    volumes:
+      - afm-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-afm} -d ${POSTGRES_DB:-afm}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  # Runs the checked-in Drizzle migrations once, then exits. The app only
+  # starts after this completes, matching docs/deployment.md's release order.
+  migrate:
+    build:
+      context: .
+      target: migrator
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-afm}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-afm}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-afm}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-afm}
+      # Cloudflare R2 — required for uploads in production.
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-afm-media}
+      R2_PUBLIC_BASE_URL: ${R2_PUBLIC_BASE_URL}
+      UPLOAD_TICKET_SECRET: ${UPLOAD_TICKET_SECRET:?set UPLOAD_TICKET_SECRET in .env}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 4s
+      retries: 6
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  afm-db-data:

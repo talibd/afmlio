@@ -14,6 +14,12 @@ export type PortfolioChrome = {
   navLinks: NavLink[]
   navCta: NavLink
   footerColumns: { title: string; links: NavLink[] }[]
+  logoMode?: "wordmark" | "mark" | "both"
+  wordmark?: string
+  logoUrl?: string
+  showWorkNav?: boolean
+  showAboutNav?: boolean
+  showContactNav?: boolean
 }
 
 export type PortfolioSeo = {

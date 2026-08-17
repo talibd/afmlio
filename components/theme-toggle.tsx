@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { Monitor, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -15,12 +16,23 @@ import { cn } from "@/lib/utils"
 
 export function ThemeToggle({ className }: { className?: string } = {}) {
   const { theme, setTheme } = useTheme()
+  // `theme` is undefined until next-themes reads localStorage on the client, so
+  // the icon can only be resolved after hydration without a mismatch. The
+  // server snapshot is false, the client snapshot true, and the value never
+  // changes, so this needs no subscription and no effect.
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
   const options = [
     { value: "light", label: "Light", icon: Sun },
     { value: "dark", label: "Dark", icon: Moon },
     { value: "system", label: "System", icon: Monitor },
   ] as const
-  const Active = options.find((o) => o.value === theme)?.icon ?? Monitor
+  const Active =
+    (mounted ? options.find((o) => o.value === theme)?.icon : undefined) ??
+    Monitor
 
   return (
     <DropdownMenu>

@@ -129,6 +129,13 @@ No administrator interface is required for MVP. Operational database or storage 
 
 ### 7.1 Authoritative current-flow preservation contract
 
+> **Owner amendment (2026-08-17):** the product owner directed that onboarding
+> open with a style-selection step showing five Frame recasts (frame, press,
+> void, studio, column — `lib/frame-variants.ts`). Onboarding is now
+> Style → Content → Projects → Review. Every variant renders the identical
+> Frame structure, so the content model below is unchanged; the "no
+> template-selection step" clause is superseded by this decision.
+
 The following sequence must remain the same as the existing application:
 
 ```text

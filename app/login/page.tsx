@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 
 import { AuthSplit } from "@/components/auth-split"
@@ -6,15 +5,11 @@ import { LoginForm } from "@/components/login-form"
 
 export const metadata: Metadata = { title: "Sign in — AFM Portfolio" }
 
-async function signIn() {
-  "use server"
-  redirect("/dashboard")
-}
-
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const { next } = await searchParams
   return (
     <AuthSplit>
-      <LoginForm action={signIn} />
+      <LoginForm nextPath={next} />
     </AuthSplit>
   )
 }

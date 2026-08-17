@@ -62,6 +62,18 @@ export function useEditorHistory(initial: StoredPortfolio) {
     return true
   }, [bump])
 
+  // Memoized like its siblings: this sits in effect dependency arrays, and an
+  // identity that changes per render turns those effects into infinite loops.
+  const resetDraft = React.useCallback(
+    (next: StoredPortfolio) => {
+      past.current = []
+      future.current = []
+      setDraftState(next)
+      bump()
+    },
+    [bump],
+  )
+
   return {
     draft,
     setDraft,
@@ -69,11 +81,6 @@ export function useEditorHistory(initial: StoredPortfolio) {
     redo,
     canUndo: counts.past > 0,
     canRedo: counts.future > 0,
-    resetDraft: (next: StoredPortfolio) => {
-      past.current = []
-      future.current = []
-      setDraftState(next)
-      bump()
-    },
+    resetDraft,
   }
 }

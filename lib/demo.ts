@@ -6,6 +6,7 @@ export {
   PROJECT_SRC,
 } from "@/lib/tastes"
 import type { TemplateId } from "@/lib/tastes"
+import type { FrameVariantId } from "@/lib/frame-variants"
 
 export type BlockType =
   | "hero"
@@ -101,6 +102,18 @@ export type Portfolio = {
   }
   seo?: { title: string; description: string; indexable: boolean }
   settings?: { email: string; showEmail: boolean; notifyViews: boolean }
+  customization?: {
+    logoMode: "wordmark" | "mark" | "both"
+    wordmark: string
+    logo?: { url: string; type: "image" | "video" } | null
+    accentColor: string
+    backgroundColor: string
+    textColor: string
+    fontPairing: "editorial" | "modern" | "gallery"
+    buttonStyle: "pill" | "square" | "outline"
+    /** Which Frame recast to render. Absent on portfolios made before variants. */
+    frameVariant?: FrameVariantId
+  }
 }
 
 export const PORTFOLIOS: Portfolio[] = [

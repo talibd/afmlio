@@ -4,14 +4,11 @@ import Link from "next/link"
 import {
   Calendar,
   ExternalLink,
-  Eye,
   FilePenLine,
   Globe,
-  HardDrive,
   LayoutGrid,
   Plus,
 } from "lucide-react"
-import { USAGE } from "@/lib/demo"
 import { usePortfolioSummaries } from "@/hooks/use-portfolio-summaries"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,10 +16,6 @@ import { cn } from "@/lib/utils"
 
 const chip =
   "flex h-11 items-center justify-center gap-2 rounded-lg border bg-secondary px-3 text-muted-foreground max-md:text-sm md:justify-start md:px-4"
-
-const storagePct = Math.round(
-  (USAGE.storageUsedMb / USAGE.storageLimitMb) * 100
-)
 
 export default function DashboardPage() {
   const portfolios = usePortfolioSummaries()
@@ -42,33 +35,25 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl bg-card px-4 py-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Eye className="size-4" />
-            Visitors
+            <Globe className="size-4" />
+            Published
           </div>
           <p className="mt-2 text-2xl font-semibold tracking-tight">
-            {USAGE.visitors.toLocaleString()}
+            {liveCount}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {USAGE.visitorsHint}
+            Public Frame portfolios
           </p>
         </div>
         <div className="rounded-xl bg-card px-4 py-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <HardDrive className="size-4" />
-            Storage used
+            <FilePenLine className="size-4" />
+            Drafts
           </div>
           <p className="mt-2 text-2xl font-semibold tracking-tight">
-            {USAGE.storageUsedMb} MB
+            {Math.max(0, portfolios.length - liveCount)}
           </p>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
-            <div
-              className="h-full rounded-full bg-primary"
-              style={{ width: `${storagePct}%` }}
-            />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {USAGE.storageUsedMb} / {USAGE.storageLimitMb} MB · {storagePct}%
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">Saved privately in your workspace</p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:justify-between">
@@ -111,13 +96,6 @@ export default function DashboardPage() {
               Open a page to edit it here.
             </p>
           </div>
-          <Button
-            variant="outline"
-            className="h-11 gap-2 px-4 font-normal"
-            render={<Link href="/dashboard/templates" />}
-          >
-            Tastes
-          </Button>
         </div>
 
         <div className="flex flex-col gap-4">
