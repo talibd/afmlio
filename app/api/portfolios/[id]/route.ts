@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { portfolios } from "@/db/schema"
 import { requireUser } from "@/lib/server/auth"
 import { db } from "@/lib/server/db"
+import { isDatabaseErrorCode } from "@/lib/server/database-errors"
 import {
   assertSameOrigin,
   HttpError,
@@ -43,12 +44,7 @@ export async function PATCH(request: NextRequest, context: Context) {
         .where(and(eq(portfolios.id, id), eq(portfolios.userId, user.id)))
         .returning()
     } catch (error) {
-      if (
-        error &&
-        typeof error === "object" &&
-        "code" in error &&
-        error.code === "23505"
-      ) {
+      if (isDatabaseErrorCode(error, "23505")) {
         throw new HttpError(409, "This portfolio URL is already in use", "SLUG_TAKEN")
       }
       throw error

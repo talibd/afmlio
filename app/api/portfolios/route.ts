@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { portfolios } from "@/db/schema"
 import { requireUser } from "@/lib/server/auth"
 import { db } from "@/lib/server/db"
+import { isDatabaseErrorCode } from "@/lib/server/database-errors"
 import {
   assertSameOrigin,
   HttpError,
@@ -14,12 +15,6 @@ import {
   portfolioCreateSchema,
   slugify,
 } from "@/lib/server/portfolio-validation"
-
-function isUniqueViolation(error: unknown): boolean {
-  return Boolean(
-    error && typeof error === "object" && "code" in error && error.code === "23505"
-  )
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -75,7 +70,7 @@ export async function POST(request: NextRequest) {
           .returning()
         return NextResponse.json({ portfolio: record }, { status: 201 })
       } catch (error) {
-        if (isUniqueViolation(error)) continue
+        if (isDatabaseErrorCode(error, "23505")) continue
         throw error
       }
     }

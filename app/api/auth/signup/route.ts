@@ -6,6 +6,7 @@ import { z } from "zod"
 import { users } from "@/db/schema"
 import { createSession } from "@/lib/server/auth"
 import { db } from "@/lib/server/db"
+import { isDatabaseErrorCode } from "@/lib/server/database-errors"
 import {
   assertSameOrigin,
   HttpError,
@@ -17,12 +18,6 @@ const signupSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(8).max(128),
 })
-
-function isUniqueViolation(error: unknown): boolean {
-  return Boolean(
-    error && typeof error === "object" && "code" in error && error.code === "23505"
-  )
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +32,7 @@ export async function POST(request: NextRequest) {
         passwordHash: await hashPassword(input.password),
       })
     } catch (error) {
-      if (isUniqueViolation(error)) {
+      if (isDatabaseErrorCode(error, "23505")) {
         throw new HttpError(
           409,
           "An account with this email already exists",
